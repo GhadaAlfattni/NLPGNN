@@ -29,12 +29,14 @@ python bert_ner_train.py
 * Data format for train Valid and test :
 Reference data in  “tests\InputNER\train”
 
-Use BERT as an tensorflow layer
+Use BERT as an tensorflow layer,See tests for more detail。
 
 ```python
 from fennlp.models import bert
-self.bert = bert.BERT(param)
+bert = bert.BERT(param)
+bert = bert(inputs, is_training)
 ```
+
 ## run ner
 ```
 python bert_ner_train.py
