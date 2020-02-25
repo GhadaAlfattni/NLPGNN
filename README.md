@@ -8,7 +8,7 @@ tensorflow>=2.0
 # Usage
 1. clone source
 ```
-git clone
+git clone https://github.com/kyzhouhzau/fennlp.git
 ```
 2. install package
 ```
