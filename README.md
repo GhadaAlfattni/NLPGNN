@@ -30,6 +30,7 @@ python bert_ner_train.py
 Reference data in  “tests\InputNER\train”
 
 Use BERT as an tensorflow layer
+
 ```python
 from fennlp.models import bert
 self.bert = bert.BERT(param)
