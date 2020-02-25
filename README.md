@@ -26,7 +26,8 @@ python bert_ner_train.py
 ## input
 * build dictionary "InputNER" and put train, Valid, test file in it.
 * Data format for train Valid and test :
-example: 是 骨 转 换 和 骨 形 成 的 特 异 性 指 标 。	O B-Anatomy O O O B-Anatomy O O O O O O O O O
+
+是 骨 转 换 和 骨 形 成 的 特 异 性 指 标 。	O B-Anatomy O O O B-Anatomy O O O O O O O O O
 
 
 
