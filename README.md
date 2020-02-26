@@ -15,9 +15,7 @@ git clone https://github.com/kyzhouhzau/fennlp.git
 python setup.py install
 ```
 3.run test file
-```
-cd tests
-```
+
 ```
 python bert_ner_train.py
 ```
@@ -42,11 +40,15 @@ bert = bert(inputs, is_training)
 python bert_ner_train.py
 ```
 
+# For GCN：
 
+```
+python train_gcn.py
+```
 
 
 # Status
-2020/2/26: add GCN example
+2020/2/26: add GCN example on
 
 2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py"
 
