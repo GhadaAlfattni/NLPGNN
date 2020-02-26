@@ -12,6 +12,7 @@ from fennlp.layers.transformer import Transformer
 class BERT(tf.keras.layers.Layer):
     def __init__(self,
                  param=None,
+                 use_crf=False,
                  batch_size=2,
                  maxlen=128,
                  vocab_size=21128,
@@ -43,6 +44,7 @@ class BERT(tf.keras.layers.Layer):
         self.max_position_embeddings = param.get("max_position_embeddings")
         self.attention_probs_dropout_prob = param.get("attention_probs_dropout_prob")
         self.num_hidden_layers = param.get("num_hidden_layers")
+        self.use_crf=use_crf
 
         self.use_one_hot_embeddings = use_one_hot_embeddings
         self.do_return_all_layers = do_return_all_layers
@@ -86,6 +88,7 @@ class BERT(tf.keras.layers.Layer):
             # kernel_constraint=create_initializer(config.initializer_range),
             name="dense"
         )
+
         self.built = True
 
     def call(self, inputs, is_training=True):

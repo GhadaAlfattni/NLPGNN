@@ -3,7 +3,7 @@ from fennlp.models import bert
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import ZHTFWriter, NERLoader
 from fennlp.metrics import Metric
-from fennlp.metrics.crf import crf_decode,crf_log_likelihood
+from fennlp.metrics.crf import crf_decode, crf_log_likelihood
 
 # 载入参数
 load_check = LoadCheckpoint()
@@ -36,7 +36,7 @@ class BERT_NER(tf.keras.Model):
         return output
 
     def predict(self, inputs, is_training=False):
-        predict = self(inputs, is_training=False)
+        predict = self(inputs, is_training)
         return predict
 
 
@@ -65,20 +65,8 @@ checkpoint.restore(tf.train.latest_checkpoint('./save'))
 # print(dir(checkpoint))
 Batch = 0
 for X, token_type_id, input_mask, Y in ner_load.load_valid():
-    output = model.predict([X, token_type_id, input_mask])#[batch_size, max_length,label_size]
-    # predict = tf.argmax(output,-1)
+    predict = model.predict([X, token_type_id, input_mask, Y])  # [batch_size, max_length,label_size]
 
-    predict, viterbi_score = crf_decode(output, transition, sequence_length=tf.reduce_sum(input_mask, 1))
+    print("Sentence", writer.convert_id_to_vocab(tf.reshape(X, [-1]).numpy()))
 
-    print("Sentence", writer.convert_id_to_vocab(tf.reshape(X,[-1]).numpy()))
-
-    print("Label", writer.convert_id_to_label(tf.reshape(predict,[-1]).numpy()))
-
-
-
-# # For test model
-# checkpoint = tf.train.Checkpoint(model=model)
-# checkpoint.restore(tf.train.latest_checkpoint('./model_checkpoint'))
-# for X, token_type_id, input_mask, Y in ner_load.load_test():
-#     output = model.predict([X, token_type_id, input_mask])
-#
+    print("Label", writer.convert_id_to_label(tf.reshape(predict, [-1]).numpy()))

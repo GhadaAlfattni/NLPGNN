@@ -27,8 +27,9 @@ python bert_ner_train.py
 * Data format for train Valid and test :
 Reference data in  “tests\InputNER\train”
 
-Use BERT as an tensorflow layer,See tests for more detail。
+Use BERT as an tensorflow layer, See tests for more detail。
 
+### without crf
 ```python
 from fennlp.models import bert
 bert = bert.BERT(param)
@@ -37,6 +38,25 @@ bert = bert(inputs, is_training)
 
 ```
 python bert_ner_train.py
+```
+
+### with crf
+```python
+bert = self.bert([input_ids, token_type_ids, input_mask], is_training)
+sequence_output = bert.get_sequence_output()  # batch,sequence,768
+predict = self.dense(sequence_output)
+predict = tf.reshape(predict, [self.batch_size, self.maxlen, -1])
+# crf
+log_likelihood, transition = self.crf(predict, Y,
+                                      sequence_lengths=tf.reduce_sum(input_mask, 1))
+loss = tf.math.reduce_mean(-log_likelihood)
+predict, viterbi_score = self.crf.crf_decode(predict, transition,
+                                             sequence_length=tf.reduce_sum(input_mask, 1))
+
+```
+
+```
+python bert_ner_crf_train.py
 ```
 
 # For GCN：

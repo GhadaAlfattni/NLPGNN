@@ -5,7 +5,7 @@ from fennlp.tools import init_weights_from_checkpoint
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import ZHTFWriter, NERLoader
 from fennlp.metrics import Metric
-from fennlp.metrics.crf import crf_log_likelihood, crf_decode
+from fennlp.metrics.crf import CrfLogLikelihood
 
 # 载入参数
 load_check = LoadCheckpoint()
@@ -13,9 +13,8 @@ param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
 param["batch_size"] = 2
-param["maxlen"] = 80
+param["maxlen"] = 40
 param["label_size"] = 47
-
 
 # 构建模型
 class BERT_NER(tf.keras.Model):
@@ -26,37 +25,41 @@ class BERT_NER(tf.keras.Model):
         self.label_size = param["label_size"]
         self.bert = bert.BERT(param)
         self.dense = tf.keras.layers.Dense(self.label_size, activation="relu")
+        self.crf = CrfLogLikelihood()
 
     def call(self, inputs, is_training=True):
-        input_ids, token_type_ids, input_mask,outputs = tf.split(inputs, 4, 0)
+        # 数据切分
+        input_ids, token_type_ids, input_mask,Y = tf.split(inputs, 4, 0)
         input_ids = tf.cast(tf.squeeze(input_ids, axis=0), tf.int64)
         token_type_ids = tf.cast(tf.squeeze(token_type_ids, axis=0), tf.int64)
         input_mask = tf.cast(tf.squeeze(input_mask, axis=0), tf.int64)
-        outputs = tf.cast(tf.squeeze(outputs, axis=0), tf.int64)
-
+        Y = tf.cast(tf.squeeze(Y, axis=0), tf.int64)
+        # 模型构建
         bert = self.bert([input_ids, token_type_ids, input_mask], is_training)
         sequence_output = bert.get_sequence_output()  # batch,sequence,768
-        pre = self.dense(sequence_output)
-        pre = tf.reshape(pre, [self.batch_size, self.maxlen, -1])
-        log_likelihood, transition = crf_log_likelihood(pre, outputs, sequence_lengths=tf.reduce_sum(input_mask, 1))
+        predict = self.dense(sequence_output)
+        predict = tf.reshape(predict, [self.batch_size, self.maxlen, -1])
+        # 损失计算
+        log_likelihood, transition = self.crf(predict, Y, sequence_lengths=tf.reduce_sum(input_mask, 1))
         loss = tf.math.reduce_mean(-log_likelihood)
-        predict, viterbi_score = crf_decode(pre, transition, sequence_length=tf.reduce_sum(input_mask, 1))
-        return loss, predict
+        predict, viterbi_score = self.crf.crf_decode(predict, transition,
+                                                         sequence_length=tf.reduce_sum(input_mask, 1))
+        return loss,predict
 
-    def predict(self, inputs, outputs, is_training=False):
-        loss, predict = self(inputs, outputs, is_training)
+    def predict(self, inputs, is_training=False):
+        loss,predict = self(inputs, is_training)
         return predict
 
 
 model = BERT_NER(param)
 
-model.build(input_shape = (4, param["batch_size"], param["maxlen"]))
+model.build(input_shape=(4, param["batch_size"], param["maxlen"]))
 
 model.summary()
 
 # 构建优化器
 optimizer_bert = optim.Adam(learning_rate=1e-5)
-# optimizer_dense = tf.keras.optimizers.Adam(learning_rate=0.01)
+optimizer_crf = optim.Adam(learning_rate=0.001)
 
 # 初始化参数
 init_weights_from_checkpoint(model,
@@ -88,9 +91,8 @@ manager = tf.train.CheckpointManager(checkpoint, directory="./save",
 # For train model
 Batch = 0
 for X, token_type_id, input_mask, Y in ner_load.load_train():
-    with tf.GradientTape() as tape:
-        loss, predict = model([X, token_type_id, input_mask,Y])
-        # loss = mask_sparse_categotical_loss(Y, output, use_mask=True)
+    with tf.GradientTape(persistent=True) as tape:
+        loss,predict = model([X, token_type_id, input_mask,Y])
 
         f1 = f1score(Y, predict)
         precision = precsionscore(Y, predict)
@@ -111,8 +113,8 @@ for X, token_type_id, input_mask, Y in ner_load.load_train():
             tf.summary.scalar("precision", precision, step=Batch)
             tf.summary.scalar("recall", recall, step=Batch)
 
-    grads_bert = tape.gradient(loss, model.variables)
-    # grads_dense = tape.gradient(loss, model.dense.variables)
-    optimizer_bert.apply_gradients(grads_and_vars=zip(grads_bert, model.variables))
-    # optimizer_dense.apply_gradients(grads_and_vars=zip(grads_dense, model.dense.variables))
+    grads_bert = tape.gradient(loss, model.bert.variables+model.dense.variables)
+    grads_crf = tape.gradient(loss, model.crf.variables)
+    optimizer_bert.apply_gradients(grads_and_vars=zip(grads_bert, model.bert.variables+model.dense.variables))
+    optimizer_crf.apply_gradients(grads_and_vars=zip(grads_crf, model.crf.variables))
     Batch += 1

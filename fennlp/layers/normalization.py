@@ -1,14 +1,17 @@
 #! encoding:utf-8
 import tensorflow as tf
+
 constraints = tf.keras.constraints
 initializers = tf.keras.initializers
 regularizers = tf.keras.regularizers
 math_ops = tf.math
 
+
 class FPNNormalization(tf.keras.layers.Layer):
     """
     article：Filter Response Normalization Layer: Eliminating Batch Dependence in the Training of Deep Neural Networks.
     """
+
     def __init__(self,
                  epsilon=1e-6,
                  gamma_initializer='ones',
@@ -24,7 +27,7 @@ class FPNNormalization(tf.keras.layers.Layer):
                  name=None,
                  **kwargs):
         super(FPNNormalization, self).__init__(
-            name=name,trainable=trainable,**kwargs)
+            name=name, trainable=trainable, **kwargs)
         self.epsilon = epsilon
         self.gamma_initializer = initializers.get(gamma_initializer)
         self.beta_initializer = initializers.get(beta_initializer)
@@ -38,12 +41,11 @@ class FPNNormalization(tf.keras.layers.Layer):
         self.beta_constraint = constraints.get(beta_constraint)
         self.tau_constraint = constraints.get(tau_constraint)
 
-
     def build(self, input_shape):
         ndims = len(input_shape)
         if ndims is None:
             raise ValueError('Input shape %s has undefined rank.' % input_shape)
-        shape = [1]*(ndims-1)
+        shape = [1] * (ndims - 1)
         shape.append(input_shape[-1])
         self.gamma = self.add_weight(
             shape=shape,
@@ -67,7 +69,7 @@ class FPNNormalization(tf.keras.layers.Layer):
             constraint=self.tau_constraint,
             name='tau',
         )
-        self.built=True
+        self.built = True
 
     def call(self, x):
         nu2 = math_ops.reduce_mean(math_ops.square(x), axis=[1, 2], keepdims=True)
@@ -94,4 +96,3 @@ class FPNNormalization(tf.keras.layers.Layer):
 
     def compute_output_shape(self, input_shape):
         return input_shape
-

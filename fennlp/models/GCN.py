@@ -12,11 +12,11 @@ class GCN2Layer(tf.keras.Model):
         self.gc2 = GCNConv.GraphConvolution(num_class)
         self.dropout = tf.keras.layers.Dropout(dropout_rate)
 
-    def call(self, inputs, adj, training):
+    def call(self, inputs, adj, training=True):
         x = tf.nn.relu(self.gc1(inputs, adj))
         x = self.dropout(x, training=training)
         x = self.gc2(x, adj)
         return tf.math.softmax(x, -1)
 
-    def predict(self,inputs, adj, training=False):
+    def predict(self, inputs, adj, training=False):
         return self(inputs, adj, training)
