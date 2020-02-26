@@ -46,7 +46,12 @@ python bert_ner_train.py
 
 
 # Status
+2020/2/26: add GCN example
+
 2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py"
+
+
+
 
 
 
