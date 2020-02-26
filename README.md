@@ -35,7 +35,6 @@ bert = bert.BERT(param)
 bert = bert(inputs, is_training)
 ```
 
-## run ner
 ```
 python bert_ner_train.py
 ```
@@ -53,7 +52,7 @@ python train_gcn.py
 
 
 # Status
-2020/2/26: add GCN example on
+2020/2/26: add GCN example on cites
 
 2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py"
 
