@@ -3,7 +3,7 @@ from fennlp.models import bert
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import ZHTFWriter, NERLoader
 from fennlp.metrics import Metric
-from fennlp.metrics.crf import crf_decode, crf_log_likelihood
+from fennlp.metrics.crf import CrfLogLikelihood
 
 # 载入参数
 load_check = LoadCheckpoint()
@@ -22,27 +22,37 @@ class BERT_NER(tf.keras.Model):
         self.batch_size = param["batch_size"]
         self.maxlen = param["maxlen"]
         self.label_size = param["label_size"]
-
         self.bert = bert.BERT(param)
-
         self.dense = tf.keras.layers.Dense(self.label_size, activation="relu")
+        self.crf = CrfLogLikelihood()
 
     def call(self, inputs, is_training=True):
-        bert = self.bert(inputs, is_training)
+        # 数据切分
+        input_ids, token_type_ids, input_mask, Y = tf.split(inputs, 4, 0)
+        input_ids = tf.cast(tf.squeeze(input_ids, axis=0), tf.int64)
+        token_type_ids = tf.cast(tf.squeeze(token_type_ids, axis=0), tf.int64)
+        input_mask = tf.cast(tf.squeeze(input_mask, axis=0), tf.int64)
+        Y = tf.cast(tf.squeeze(Y, axis=0), tf.int64)
+        # 模型构建
+        bert = self.bert([input_ids, token_type_ids, input_mask], is_training)
         sequence_output = bert.get_sequence_output()  # batch,sequence,768
-        output = self.dense(sequence_output)
-        output = tf.reshape(output, [self.batch_size, self.maxlen, -1])
-        output = tf.math.softmax(output, axis=-1)
-        return output
+        predict = self.dense(sequence_output)
+        predict = tf.reshape(predict, [self.batch_size, self.maxlen, -1])
+        # 损失计算
+        log_likelihood, transition = self.crf(predict, Y, sequence_lengths=tf.reduce_sum(input_mask, 1))
+        loss = tf.math.reduce_mean(-log_likelihood)
+        predict, viterbi_score = self.crf.crf_decode(predict, transition,
+                                                     sequence_length=tf.reduce_sum(input_mask, 1))
+        return loss, predict
 
     def predict(self, inputs, is_training=False):
-        predict = self(inputs, is_training)
+        loss, predict = self(inputs, is_training)
         return predict
 
 
 model = BERT_NER(param)
 
-model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
+model.build(input_shape=(4, param["batch_size"], param["maxlen"]))
 
 model.summary()
 
