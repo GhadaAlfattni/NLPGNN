@@ -52,7 +52,7 @@ python train_gcn.py
 
 
 # Status
-2020/2/26: add GCN example on cites
+2020/2/26: add GCN example on cora data
 
 2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py"
 
