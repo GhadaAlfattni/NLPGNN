@@ -42,6 +42,11 @@ python bert_ner_train.py
 
 # For GCN：
 
+```python
+from fennlp.models import GCN
+model = GCN.GCN2Layer(_HIDDEN_DIM, _NUM_CLASS, _DROP_OUT_RATE)
+```
+
 ```
 python train_gcn.py
 ```
