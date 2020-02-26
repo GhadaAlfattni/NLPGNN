@@ -8,12 +8,11 @@ import time
 import tensorflow as tf
 import collections
 import numpy as np
-from tensorflow.python.keras import backend as K
 
 version = tf.__version__
 Version_float = float('.'.join(version.split('.')[:2]))
 
-
+#For BERT
 def create_initializer(initializer_range=0.02):
     """Creates a `truncated_normal_initializer` with the given range."""
     # return tf.keras.initializers.get("truncated_normal")
@@ -78,12 +77,10 @@ def assert_rank(tensor, expected_rank, name=None):
             "to expected rank {}".format(name, actual_rank, str(expected_rank))
         )
 
-
 def gelu(x):
     import numpy as np
     cdf = 0.5 * (1.0 + tf.tanh((np.sqrt(2 / np.pi) * (x + 0.044715 * tf.pow(x, 3)))))
     return x * cdf
-
 
 def get_activation(activation_string):
     "map string to activation function"
@@ -216,37 +213,22 @@ def get_shape_list(tensor, expected_rank=None, name=None):
         shape[index] = dyn_shape[index]
     return shape
 
+# For GNN
+def uniform(shape,scale=0.05,name=None):
+    initial = tf.keras.backend.random_uniform(shape,minval=-scale,maxval=scale,dtype=tf.float32)
+    return tf.Variable(initial,name=name)
 
-def precision(y_true, y_pred):
-    # Calculates the precision
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    precision = true_positives / (predicted_positives + K.epsilon())
-    return precision
+def glort(shape,name=None):
+    initial_range = np.sqrt(6.0/(shape[0]+shape[1]))
+    initial = tf.keras.backend.random_uniform(shape,minval=-initial_range,
+                                              maxval=initial_range,dtype=tf.float32)
+    return tf.Variable(initial,name=name)
 
+def zeros(shape,name=None):
+    initial = tf.zeros(shape,dtype=tf.float32)
+    return tf.Variable(initial,name=name)
 
-def recall(y_true, y_pred):
-    # Calculates the recall
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    recall = true_positives / (possible_positives + K.epsilon())
-    return recall
+def ones(shape,name=None):
+    initial = tf.ones(shape,dtype=tf.float32)
+    return tf.Variable(initial,name=name)
 
-
-def fbeta_score(y_true, y_pred, beta=1):
-    # Calculates the F score, the weighted harmonic mean of precision and recall.
-    if beta < 0:
-        raise ValueError('The lowest choosable beta is zero (only precision).')
-    # If there are no true positives, fix the F score at 0 like sklearn.
-    if K.sum(K.round(K.clip(y_true, 0, 1))) == 0:
-        return 0
-    p = precision(y_true, y_pred)
-    r = recall(y_true, y_pred)
-    bb = beta ** 2
-    fbeta_score = (1 + bb) * (p * r) / (bb * p + r + K.epsilon())
-    return fbeta_score
-
-
-def fmeasure(y_true, y_pred):
-    # Calculates the f-measure, the harmonic mean of precision and recall.
-    return fbeta_score(y_true, y_pred, beta=1)

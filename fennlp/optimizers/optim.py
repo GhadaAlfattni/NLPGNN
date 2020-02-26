@@ -7,6 +7,8 @@ https://github.com/tensorflow/tensorflow/blob/v2.1.0/tensorflow/python/keras/bac
 https://github.com/bojone/bert4keras
 """
 import tensorflow as tf
+
+
 class Adam(tf.keras.optimizers.Optimizer):
     def __init__(self,
                  learning_rate=0.01,
@@ -97,3 +99,4 @@ class Adam(tf.keras.optimizers.Optimizer):
         }
         base_config = super(Adam, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
