@@ -1,8 +1,13 @@
 # fennlp
 
-An out-of-the-box NLP toolkit can easily help you solve tasks such as entity recognition, relationship extraction, text classfication and so on.
+An out-of-the-box NLP toolkit can easily help you solve tasks such as
+entity recognition, relationship extraction, text classfication and so on.
+Currently it contain the following model (see "tests" dictionary for more details):
+* BERT-NER
+* BERT-CRF-NER
+* GCN (2 layer)
 
-# Require
+# Requirement
 tensorflow>=2.0
 
 # Usage
@@ -14,8 +19,7 @@ git clone https://github.com/kyzhouhzau/fennlp.git
 ```
 python setup.py install
 ```
-3.run test file
-
+3.run model
 ```
 python bert_ner_train.py
 ```
@@ -23,13 +27,17 @@ python bert_ner_train.py
 # For NER：
 
 ## input
-* build dictionary "InputNER" and put train, Valid, test file in it.
-* Data format for train Valid and test :
-Reference data in  “tests\InputNER\train”
+* put train, valid and test file in "InputNER" dictionary.
+* data format: reference data in  "tests\NER\InputNER\train"
+e.g. "骨 钙 素 mRNA 表 达 水 平 ,    B-Test I-Test I-Test O O O O O O"
+for each line in train contains two parts, the first part "骨 钙 素 mRNA 表 达 水 平 ," is a sentence.
+the second part "B-Test I-Test I-Test O O O O O O" is the tag for each word in the sentence.NER
+both of them use '\t' to concatenate.
 
-Use BERT as an tensorflow layer, See tests for more detail。
+Use BERT as an tensorflow2.0's layer, See tests for more detail。
 
 ### without crf
+
 ```python
 from fennlp.models import bert
 bert = bert.BERT(param)
@@ -47,12 +55,9 @@ sequence_output = bert.get_sequence_output()  # batch,sequence,768
 predict = self.dense(sequence_output)
 predict = tf.reshape(predict, [self.batch_size, self.maxlen, -1])
 # crf
-log_likelihood, transition = self.crf(predict, Y,
-                                      sequence_lengths=tf.reduce_sum(input_mask, 1))
+log_likelihood, transition = self.crf(predict, Y, sequence_lengths=tf.reduce_sum(input_mask, 1))
 loss = tf.math.reduce_mean(-log_likelihood)
-predict, viterbi_score = self.crf.crf_decode(predict, transition,
-                                             sequence_length=tf.reduce_sum(input_mask, 1))
-
+predict, viterbi_score = self.crf.crf_decode(predict, transition, sequence_length=tf.reduce_sum(input_mask, 1))
 ```
 
 ```

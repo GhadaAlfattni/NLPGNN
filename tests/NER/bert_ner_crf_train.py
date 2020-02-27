@@ -59,7 +59,7 @@ model.summary()
 
 # 构建优化器
 optimizer_bert = optim.Adam(learning_rate=1e-5)
-optimizer_crf = optim.Adam(learning_rate=0.001)
+# optimizer_crf = optim.Adam(learning_rate=1e-4)
 
 # 初始化参数
 init_weights_from_checkpoint(model,
@@ -114,7 +114,7 @@ for X, token_type_id, input_mask, Y in ner_load.load_train():
             tf.summary.scalar("recall", recall, step=Batch)
 
     grads_bert = tape.gradient(loss, model.bert.variables+model.dense.variables)
-    grads_crf = tape.gradient(loss, model.crf.variables)
+    # grads_crf = tape.gradient(loss, model.crf.variables)
     optimizer_bert.apply_gradients(grads_and_vars=zip(grads_bert, model.bert.variables+model.dense.variables))
-    optimizer_crf.apply_gradients(grads_and_vars=zip(grads_crf, model.crf.variables))
+    # optimizer_crf.apply_gradients(grads_and_vars=zip(grads_crf, model.crf.variables))
     Batch += 1
