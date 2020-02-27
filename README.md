@@ -1,11 +1,13 @@
-# fennlp
+# fennlp v1
 
 An out-of-the-box NLP toolkit can easily help you solve tasks such as
 entity recognition, relationship extraction, text classfication and so on.
-Currently it contain the following model (see "tests" dictionary for more details):
-* BERT-NER
-* BERT-CRF-NER
+Currently it contain the following models (see "tests" dictionary for more details):
+* BERT (tf2.0 layer, Chinese and English Version)
+* BERT-NER (Chinese Version, 中文糖尿病标注数据集)
+* BERT-CRF-NER (Chinese Version, 中文糖尿病标注数据集)
 * GCN (2 layer)
+
 
 # Requirement
 tensorflow>=2.0

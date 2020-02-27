@@ -43,6 +43,7 @@ f1 = f1score(label, predict)
 loss = crossentropy(label, predict, use_mask=False)
 print("Valid Loss {:.4f} | ACC {:.4f} | F1 {:.4f}".format(loss.numpy(), acc,f1))
 
+# For test
 output = model.predict(features, adj)
 predict = tf.gather(output, list(idx_test))
 label = tf.gather(labels, list(idx_test))
