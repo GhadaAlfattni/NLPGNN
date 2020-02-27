@@ -8,7 +8,7 @@ from fennlp.metrics import Losess, Metric
 _HIDDEN_DIM = 32
 _NUM_CLASS = 7
 _DROP_OUT_RATE = 0.4
-_EPOCH = 200
+_EPOCH = 100
 
 loader = graphloader.GCNLoader()
 features, adj, labels, idx_train, idx_val, idx_test = loader.load()
