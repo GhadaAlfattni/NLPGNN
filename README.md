@@ -68,6 +68,10 @@ python bert_ner_crf_train.py
 
 # For GCN：
 
+## input
+data format: see files in "tests/GCN/data/README.md" for more detail.
+
+
 ```python
 from fennlp.models import GCN
 model = GCN.GCN2Layer(_HIDDEN_DIM, _NUM_CLASS, _DROP_OUT_RATE)
@@ -77,8 +81,8 @@ model = GCN.GCN2Layer(_HIDDEN_DIM, _NUM_CLASS, _DROP_OUT_RATE)
 python train_gcn.py
 ```
 
-
 # Status
+
 2020/2/26: add GCN example on cora data
 
 2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py"
