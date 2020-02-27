@@ -30,12 +30,10 @@ python bert_ner_train.py
 * put train, valid and test file in "InputNER" dictionary.
 * data format: reference data in  "tests\NER\InputNER\train"
 
-e.g. "骨 钙 素 mRNA 表 达 水 平 ,    B-Test I-Test I-Test O O O O O O"
+e.g. "拮 抗 RANKL 对 破 骨 细 胞 的 作 用 。	O O O O B-Anatomy I-Anatomy I-Anatomy E-Anatomy O O O O"
 
-for each line in train contains two parts, the first part "骨 钙 素 mRNA 表 达 水 平 ," is a sentence.
-
-the second part "B-Test I-Test I-Test O O O O O O" is the tag for each word in the sentence.
-
+for each line in train contains two parts, the first part "拮 抗 RANKL 对 破 骨 细 胞 的 作 用 。" is a sentence.
+the second part "O O O O B-Anatomy I-Anatomy I-Anatomy E-Anatomy O O O O" is the tag for each word in the sentence.
 both of them use '\t' to concatenate.
 
 Use BERT as an tensorflow2.0's layer, See tests for more detail。
