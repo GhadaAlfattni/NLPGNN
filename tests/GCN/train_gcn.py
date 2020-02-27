@@ -5,10 +5,10 @@ from fennlp.models import GCN
 from fennlp.optimizers import optim
 from fennlp.metrics import Losess, Metric
 
-_HIDDEN_DIM = 16
-_NUM_CLASS = 10
-_DROP_OUT_RATE = 0.5
-_EPOCH = 80
+_HIDDEN_DIM = 32
+_NUM_CLASS = 7
+_DROP_OUT_RATE = 0.4
+_EPOCH = 200
 
 loader = graphloader.GCNLoader()
 features, adj, labels, idx_train, idx_val, idx_test = loader.load()
@@ -42,3 +42,11 @@ acc = accscore(label, predict)
 f1 = f1score(label, predict)
 loss = crossentropy(label, predict, use_mask=False)
 print("Valid Loss {:.4f} | ACC {:.4f} | F1 {:.4f}".format(loss.numpy(), acc,f1))
+
+output = model.predict(features, adj)
+predict = tf.gather(output, list(idx_test))
+label = tf.gather(labels, list(idx_test))
+acc = accscore(label, predict)
+f1 = f1score(label, predict)
+loss = crossentropy(label, predict, use_mask=False)
+print("Test Loss {:.4f} | ACC {:.4f} | F1 {:.4f}".format(loss.numpy(), acc,f1))
