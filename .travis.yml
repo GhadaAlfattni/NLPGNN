@@ -9,7 +9,7 @@ install:
 script: true
 
 after_success:
-- coveralls
+  - coveralls
 
 notifications:
   email: false
