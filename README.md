@@ -8,6 +8,13 @@ Currently it contain the following models (see "tests" dictionary for more detai
 * BERT-Sentence-Classification(Chinese Version, 新闻标题短文本分类)
 * GCN (2 layer)
 
+# Status
+2020/3/2: add test example "train_bert_classification.py" for text classification based on bert.
+
+2020/2/26: add GCN example on cora data.
+
+2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py".
+
 
 # Requirement
 * tensorflow>=2.0
@@ -31,9 +38,10 @@ python bert_ner_train.py
 * put train, valid and test file in "Input" dictionary.
 * data format: reference data in "\tests\CLS\BERT\Input".
 
-e.g.
+e.g. "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ， 小 克 里 琴 科 谈 自 己 是 否 会 复 出    2"
 
-For each line in train(test,valid) contains two parts, the first part is the sentence, and second part is the label.
+For each line in train(test,valid) contains two parts, the first part "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ，
+小 克 里 琴 科 谈 自 己 是 否 会 复 出" is the sentence, and second part "2" is the label.
 
 ```python
 from fennlp.models import bert
@@ -102,14 +110,6 @@ model = GCN.GCN2Layer(_HIDDEN_DIM, _NUM_CLASS, _DROP_OUT_RATE)
 ```
 python train_gcn.py
 ```
-
-# Status
-2020/3/2: add test example "train_bert_classification.py" for text classification based on bert.
-
-2020/2/26: add GCN example on cora data.
-
-2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py".
-
 
 
 
