@@ -31,6 +31,7 @@ Currently it contain the following models (see "tests" dictionary for more detai
 * tensorflow>=2.0
 
 # Usage
+
 1. clone source
 ```
 git clone https://github.com/kyzhouhzau/fennlp.git
@@ -39,7 +40,7 @@ git clone https://github.com/kyzhouhzau/fennlp.git
 ```
 python setup.py install
 ```
-3.run model
+3. run model
 ```
 python bert_ner_train.py
 ```
