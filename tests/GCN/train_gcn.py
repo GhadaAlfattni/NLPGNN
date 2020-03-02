@@ -5,9 +5,9 @@ from fennlp.models import GCN
 from fennlp.optimizers import optim
 from fennlp.metrics import Losess, Metric
 
-_HIDDEN_DIM = 32
+_HIDDEN_DIM = 64
 _NUM_CLASS = 7
-_DROP_OUT_RATE = 0.4
+_DROP_OUT_RATE = 0.5
 _EPOCH = 100
 
 loader = graphloader.GCNLoader()

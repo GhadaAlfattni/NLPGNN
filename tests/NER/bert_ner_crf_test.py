@@ -1,7 +1,7 @@
 import tensorflow as tf
 from fennlp.models import bert
 from fennlp.datas.checkpoint import LoadCheckpoint
-from fennlp.datas.dataloader import ZHTFWriter, NERLoader
+from fennlp.datas.dataloader import ZHTFWriter, ZHTFLoader
 from fennlp.metrics import Metric
 from fennlp.metrics.crf import CrfLogLikelihood
 
@@ -12,7 +12,7 @@ param, vocab_file, model_path = load_check.load_bert_param()
 # 定制参数
 param["batch_size"] = 2
 param["maxlen"] = 100
-param["label_size"] = 47
+param["label_size"] = 46
 
 
 # 构建模型
@@ -60,7 +60,7 @@ model.summary()
 writer = ZHTFWriter(param["maxlen"], vocab_file,
                     modes=["Valid"], check_exist=True)
 
-ner_load = NERLoader(param["maxlen"], param["batch_size"], epoch=3)
+ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=3)
 
 # Metrics
 f1score = Metric.SparseF1Score("macro")

@@ -1,5 +1,4 @@
-# fennlp v1
-
+# Package description
 An out-of-the-box NLP toolkit can easily help you solve tasks such as
 entity recognition, relationship extraction, text classfication and so on.
 Currently it contain the following models (see "tests" dictionary for more details):
@@ -10,7 +9,7 @@ Currently it contain the following models (see "tests" dictionary for more detai
 
 
 # Requirement
-tensorflow>=2.0
+* tensorflow>=2.0
 
 # Usage
 1. clone source
@@ -28,15 +27,15 @@ python bert_ner_train.py
 
 # For NER：
 
-## input
+## Input
 * put train, valid and test file in "InputNER" dictionary.
 * data format: reference data in  "tests\NER\InputNER\train"
 
 e.g. "拮 抗 RANKL 对 破 骨 细 胞 的 作 用 。	O O O O B-Anatomy I-Anatomy I-Anatomy E-Anatomy O O O O"
 
-for each line in train contains two parts, the first part "拮 抗 RANKL 对 破 骨 细 胞 的 作 用 。" is a sentence.
-the second part "O O O O B-Anatomy I-Anatomy I-Anatomy E-Anatomy O O O O" is the tag for each word in the sentence.
-both of them use '\t' to concatenate.
+For each line in train contains two parts, the first part "拮 抗 RANKL 对 破 骨 细 胞 的 作 用 。" is a sentence.
+The second part "O O O O B-Anatomy I-Anatomy I-Anatomy E-Anatomy O O O O" is the tag for each word in the sentence.
+Both of them use '\t' to concatenate.
 
 Use BERT as an tensorflow2.0's layer, See tests for more detail。
 
@@ -88,6 +87,8 @@ python train_gcn.py
 2020/2/26: add GCN example on cora data
 
 2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py"
+
+
 
 
 

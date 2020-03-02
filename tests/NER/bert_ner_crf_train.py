@@ -3,7 +3,7 @@ from fennlp.models import bert
 from fennlp.optimizers import optim
 from fennlp.tools import init_weights_from_checkpoint
 from fennlp.datas.checkpoint import LoadCheckpoint
-from fennlp.datas.dataloader import ZHTFWriter, NERLoader
+from fennlp.datas.dataloader import ZHTFWriter, ZHTFLoader
 from fennlp.metrics import Metric
 from fennlp.metrics.crf import CrfLogLikelihood
 
@@ -14,7 +14,7 @@ param, vocab_file, model_path = load_check.load_bert_param()
 # 定制参数
 param["batch_size"] = 2
 param["maxlen"] = 40
-param["label_size"] = 47
+param["label_size"] = 46
 
 # 构建模型
 class BERT_NER(tf.keras.Model):
@@ -71,7 +71,7 @@ init_weights_from_checkpoint(model,
 writer = ZHTFWriter(param["maxlen"], vocab_file,
                     modes=["train"], check_exist=True)
 
-ner_load = NERLoader(param["maxlen"], param["batch_size"], epoch=3)
+ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=3)
 
 # 训练模型
 # 使用tensorboard
