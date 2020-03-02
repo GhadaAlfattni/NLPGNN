@@ -23,9 +23,7 @@ class BERT_NER(tf.keras.Model):
         self.batch_size = param["batch_size"]
         self.maxlen = param["maxlen"]
         self.label_size = param["label_size"]
-
         self.bert = bert.BERT(param)
-
         self.dense = tf.keras.layers.Dense(self.label_size, activation="relu")
 
     def call(self, inputs, is_training=True):

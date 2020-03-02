@@ -5,6 +5,7 @@ Currently it contain the following models (see "tests" dictionary for more detai
 * BERT (tf2.0 layer, Chinese and English Version)
 * BERT-NER (Chinese Version, 中文糖尿病标注数据集)
 * BERT-CRF-NER (Chinese Version, 中文糖尿病标注数据集)
+* BERT-Sentence-Classification(Chinese Version, 新闻标题短文本分类)
 * GCN (2 layer)
 
 
@@ -24,11 +25,30 @@ python setup.py install
 ```
 python bert_ner_train.py
 ```
+# For Sentence Classfication
 
+## Input
+* put train, valid and test file in "Input" dictionary.
+* data format: reference data in "\tests\CLS\BERT\Input".
+
+e.g.
+
+For each line in train(test,valid) contains two parts, the first part is the sentence, and second part is the label.
+
+```python
+from fennlp.models import bert
+self.bert = bert.BERT(param)
+bert = bert(inputs, is_training)
+sequence_output = bert.get_pooled_output()
+```
+
+``` 
+python train_bert_classification.py
+```
 # For NER：
 
 ## Input
-* put train, valid and test file in "InputNER" dictionary.
+* put train, valid and test file in "Input" dictionary.
 * data format: reference data in  "tests\NER\InputNER\train"
 
 e.g. "拮 抗 RANKL 对 破 骨 细 胞 的 作 用 。	O O O O B-Anatomy I-Anatomy I-Anatomy E-Anatomy O O O O"
@@ -45,6 +65,7 @@ Use BERT as an tensorflow2.0's layer, See tests for more detail。
 from fennlp.models import bert
 bert = bert.BERT(param)
 bert = bert(inputs, is_training)
+sequence_output = bert.get_sequence_output()
 ```
 
 ```
@@ -83,10 +104,11 @@ python train_gcn.py
 ```
 
 # Status
+2020/3/2: add test example "train_bert_classification.py" for text classification based on bert.
 
-2020/2/26: add GCN example on cora data
+2020/2/26: add GCN example on cora data.
 
-2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py"
+2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py".
 
 
 
