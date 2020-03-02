@@ -4,7 +4,7 @@ import sys
 from setuptools import find_packages, setup
 
 # Package meta-data.
-NAME = 'FenNLP'
+NAME = 'fennlp'
 DESCRIPTION = 'An out-of-the-box NLP toolkit can easily help you solve tasks such ' \
               'as entity recognition, relationship extraction, text classfication and so on.'
 URL = 'https://github.com/kyzhouhzau/FenNLP'
