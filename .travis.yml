@@ -6,6 +6,10 @@ python:
 install:
   - python setup.py install
 
+scripts:
+  - cd tests
+  - python setup.py test
+
 after_success:
 - coveralls
 
