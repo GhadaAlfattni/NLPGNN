@@ -1,3 +1,13 @@
+[![Build Status](https://travis-ci.org/kyzhouhzau/fennlp.svg?branch=master)](https://travis-ci.org/kyzhouhzau/fennlp/branches)
+[![GitHub version](https://badge.fury.io/gh/kyzhouhzau%2Ffennlp.svg)](https://badge.fury.io/gh/kyzhouhzau%2Ffennlp)
+[![Maintainability](https://api.codeclimate.com/v1/badges/d587092245542684c80b/maintainability)](https://codeclimate.com/github/kyzhouhzau/fennlp/maintainability)
+[![Coverage Status](https://coveralls.io/repos/github/kyzhouhzau/fennlp/badge.svg?branch=master)](https://coveralls.io/github/kyzhouhzau/fennlp?branch=master)
+[![License](https://img.shields.io/github/license/kyzhouhzau/fennlp)](https://github.com/kyzhouhzau/fennlp/blob/master/LICENSE)
+[![Issues](https://img.shields.io/github/issues/kyzhouhzau/fennlp)](https://github.com/kyzhouhzau/fennlp/issues)
+
+
+
+
 # Package description
 An out-of-the-box NLP toolkit can easily help you solve tasks such as
 entity recognition, relationship extraction, text classfication and so on.
