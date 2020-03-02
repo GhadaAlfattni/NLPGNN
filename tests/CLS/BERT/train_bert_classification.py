@@ -38,11 +38,10 @@ class BERT_NER(tf.keras.Model):
         return output
 
 
-#
 model = BERT_NER(param)
-#
+
 model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
-#
+
 model.summary()
 
 # 构建优化器
