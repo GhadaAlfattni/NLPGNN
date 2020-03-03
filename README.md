@@ -17,7 +17,7 @@ Currently it contain the following models (see "tests" dictionary for more detai
 * BERT-NER (Chinese Version, 中文糖尿病标注数据集)
 * BERT-CRF-NER (Chinese Version, 中文糖尿病标注数据集)
 * BERT-Sentence-Classification(Chinese Version, 新闻标题短文本分类)
-* TextCNN(Chinese and English Version)
+* TextCNN(Chinese and English Version, 新闻标题短文本分类)
 * GCN (2 layer)
 
 # Status
@@ -90,6 +90,7 @@ python train_text_cnn.py
 ```
 TODO: use "WordPiece embedding" to Initialize word embedding.
 ```
+For more detail about reference [WordPiece](https://mp.weixin.qq.com/s/Il8sh66TUCEPskbypDZLAg) 
 
 # For NER：
 
