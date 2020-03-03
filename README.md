@@ -49,15 +49,16 @@ python bert_ner_train.py
 ```
 # For Sentence Classfication
 
-### BERT based
 ## Input
 * put train, valid and test file in "Input" dictionary.
-* data format: reference data in "\tests\CLS\BERT\Input".
+* data format: reference data in "\tests\CLS\BERT( or TextCNN)\Input".
 
 e.g. "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ， 小 克 里 琴 科 谈 自 己 是 否 会 复 出    2"
 
 For each line in train(test,valid) contains two parts, the first part "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ，
 小 克 里 琴 科 谈 自 己 是 否 会 复 出" is the sentence, and second part "2" is the label.
+
+### BERT based
 
 ```python
 from fennlp.models import bert
@@ -71,13 +72,6 @@ python train_bert_classification.py
 ```
 
 ### TextCNN
-* put train, valid and test file in "Input" dictionary.
-* data format: reference data in "\tests\CLS\TextCNN\Input".
-
-e.g. "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ， 小 克 里 琴 科 谈 自 己 是 否 会 复 出    2"
-
-For each line in train(test,valid) contains two parts, the first part "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ，
-小 克 里 琴 科 谈 自 己 是 否 会 复 出" is the sentence, and second part "2" is the label.
 
 ```python
 from fennlp.models import TextCNN
