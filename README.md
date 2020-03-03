@@ -17,9 +17,12 @@ Currently it contain the following models (see "tests" dictionary for more detai
 * BERT-NER (Chinese Version, 中文糖尿病标注数据集)
 * BERT-CRF-NER (Chinese Version, 中文糖尿病标注数据集)
 * BERT-Sentence-Classification(Chinese Version, 新闻标题短文本分类)
+* TextCNN(Chinese and English Version)
 * GCN (2 layer)
 
 # Status
+2020/3/3: add test example "tran_text_cnn.py" for train TextCNN model. 
+
 2020/3/2: add test example "train_bert_classification.py" for text classification based on bert.
 
 2020/2/26: add GCN example on cora data.
@@ -46,6 +49,7 @@ python bert_ner_train.py
 ```
 # For Sentence Classfication
 
+### BERT based
 ## Input
 * put train, valid and test file in "Input" dictionary.
 * data format: reference data in "\tests\CLS\BERT\Input".
@@ -65,6 +69,28 @@ sequence_output = bert.get_pooled_output()
 ``` 
 python train_bert_classification.py
 ```
+
+### TextCNN
+* put train, valid and test file in "Input" dictionary.
+* data format: reference data in "\tests\CLS\TextCNN\Input".
+
+e.g. "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ， 小 克 里 琴 科 谈 自 己 是 否 会 复 出    2"
+
+For each line in train(test,valid) contains two parts, the first part "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ，
+小 克 里 琴 科 谈 自 己 是 否 会 复 出" is the sentence, and second part "2" is the label.
+
+```python
+from fennlp.models import TextCNN
+model = TextCNN.TextCNN(maxlen, vocab_size, embedding_dims, class_num)
+```
+
+``` 
+python train_text_cnn.py
+```
+```
+TODO: use "WordPiece embedding" to Initialize word embedding.
+```
+
 # For NER：
 
 ## Input

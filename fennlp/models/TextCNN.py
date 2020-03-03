@@ -11,16 +11,17 @@ class TextCNN(tf.keras.Model):
                  maxlen,
                  vocab_size,
                  embedding_dims,
-                 filter_size=[128, 128, 128],
-                 kernel_sizes=[2, 3, 4],
                  class_num=2,
+                 kernel_sizes=[2, 3, 4],
+                 filter_size=[128, 128, 128],
                  name=None,
                  **kwargs):
         super(TextCNN, self).__init__(name=name, **kwargs)
         self.maxlen = maxlen
         self.kernel_sizes = kernel_sizes
-
-        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dims, maxlen)
+        self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dims,
+                                                   input_length=maxlen,
+                                                   mask_zero=True)
         self.convs = []
         self.max_poolings = []
         for i, k in enumerate(kernel_sizes):
