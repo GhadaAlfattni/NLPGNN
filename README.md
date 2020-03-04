@@ -5,7 +5,7 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/d587092245542684c80b/maintainability)](https://codeclimate.com/github/kyzhouhzau/fennlp/maintainability)
 [![License](https://img.shields.io/github/license/kyzhouhzau/fennlp)](https://github.com/kyzhouhzau/fennlp/blob/master/LICENSE)
 [![Issues](https://img.shields.io/github/issues/kyzhouhzau/fennlp)](https://github.com/kyzhouhzau/fennlp/issues)
-
+[![Coverage Status](https://coveralls.io/repos/github/kyzhouhzau/fennlp/badge.svg?branch=master)](https://coveralls.io/github/kyzhouhzau/fennlp?branch=master)
 
 
 
@@ -131,7 +131,7 @@ python bert_ner_crf_train.py
 
 # For GCN：
 
-## input
+## Input
 data format: see files in "tests/GCN/data/README.md" for more detail.
 
 
