@@ -50,7 +50,6 @@ class MultiAttentionLayer(tf.keras.layers.Layer):
         self.from_seq_length = from_seq_length
         self.to_seq_length = to_seq_length
 
-
     def build(self, input_shape):
         self.input_spec = tf.keras.layers.InputSpec(shape=input_shape)
         # `query_layer` =[B*F, N*H]
@@ -77,7 +76,7 @@ class MultiAttentionLayer(tf.keras.layers.Layer):
         self.drop_out = tf.keras.layers.Dropout(self.attention_probs_dropout_prob)
         self.built = True
 
-    def call(self, from_tensor, to_tensor=None, attention_mask=None,is_training=True ):
+    def call(self, from_tensor, to_tensor=None, attention_mask=None, is_training=True):
         from_shape = from_tensor.shape.as_list()
         to_shape = to_tensor.shape.as_list()
         if len(from_shape) != len(to_shape):
@@ -131,3 +130,81 @@ class MultiAttentionLayer(tf.keras.layers.Layer):
             context_layer = tf.reshape(context_layer, [self.batch_size, self.from_seq_length,
                                                        self.num_attention_heads * self.size_per_head])
         return context_layer
+
+
+# Bahdanau2015
+class BahdanauAttentionLayer(tf.keras.layers.Layer):
+    def __init__(self, hidden_size,
+                 v_initializer=None,
+                 w_initializer=None,
+                 u_initializer=None,
+                 use_bias=True,
+                 b_initializer='zero',
+                 name='att', **kwargs):
+        super(BahdanauAttentionLayer, self).__init__(name=name, **kwargs)
+        self.hidden_size = hidden_size
+        self.use_bias = use_bias
+        self.v_initializer = tf.keras.initializers.get(v_initializer)
+        self.w_initializer = tf.keras.initializers.get(w_initializer)
+        self.u_initializer = tf.keras.initializers.get(u_initializer)
+        self.b_initializer = tf.keras.initializers.get(b_initializer)
+
+    def build(self, input_shape):
+        inner_size = input_shape.as_list()
+        self.V = self.add_weight(
+            name="V",
+            shape=[self.hidden_size],
+            initializer=self.v_initializer,
+        )
+        self.W = self.add_weight(
+            name="W",
+            shape=[inner_size[-1], self.hidden_size],
+            initializer=self.w_initializer,
+        )
+        self.U = self.add_weight(
+            name="U",
+            shape=[inner_size[-1], self.hidden_size],
+            initializer=self.u_initializer,
+        )
+        if self.use_bias:
+            self.bias = self.add_weight(
+                name="bias",
+                shape=[self.hidden_size],
+                initializer=self.b_initializer,
+            )
+
+        self.attn = tf.keras.layers.Dense(self.hidden_size, activation="tanh")
+
+    def call(self, hidden_state, encoder_outputs,training=False):
+        """
+        :param hidden_state: [B,D]
+        :param encoder_outputs: [B,T,D]
+        :return:
+        """
+        hidden_inner_dim = hidden_state.get_shape().as_list()[-1]
+        encoder_inner_dim = encoder_outputs.get_shape().as_list()[-1]
+        if hidden_inner_dim != encoder_inner_dim:
+            raise ValueError("The last shape of hidden_state and encoder_outputs must equal!")
+        dens1 = tf.tensordot(tf.expand_dims(hidden_state, 1), self.W, axes=(2, 1))
+        dens2 = tf.tensordot(encoder_outputs, self.U, axes=(2, 1))
+        tanh_ = self.attn(dens1 + dens2 + self.bias) if self.use_bias else self.attn(dens1 + dens2)
+        cij = tf.tensordot(tanh_, self.V, axes=(2, 0))
+        alphas = tf.keras.backend.softmax(cij)
+        output = tf.math.reduce_sum(encoder_outputs * tf.expand_dims(alphas, -1), axis=1)  # [B*T*2H]
+        return output, alphas
+
+    def get_config(self):
+        config = {
+            'hidden_size': self.hidden_size,
+            "use_bias": self.use_bias,
+            'v_initializer': tf.keras.initializers.serialize(self.v_initializer),
+            'w_initializer': tf.keras.initializers.serialize(self.w_initializer),
+            'u_initializer': tf.keras.initializers.serialize(self.u_initializer),
+            'b_initializer': tf.keras.initializers.serialize(self.b_initializer),
+        }
+        base_config = super(BahdanauAttentionLayer, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+

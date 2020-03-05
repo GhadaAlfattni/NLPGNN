@@ -5,9 +5,7 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/d587092245542684c80b/maintainability)](https://codeclimate.com/github/kyzhouhzau/fennlp/maintainability)
 [![License](https://img.shields.io/github/license/kyzhouhzau/fennlp)](https://github.com/kyzhouhzau/fennlp/blob/master/LICENSE)
 [![Issues](https://img.shields.io/github/issues/kyzhouhzau/fennlp)](https://github.com/kyzhouhzau/fennlp/issues)
-[![Coverage Status](https://coveralls.io/repos/github/kyzhouhzau/fennlp/badge.svg?branch=master)](https://coveralls.io/github/kyzhouhzau/fennlp?branch=master)
-
-
+[![Coverage Status](https://coveralls.io/repos/github/kyzhouhzau/fennlp/badge.svg)](https://coveralls.io/github/kyzhouhzau/fennlp)
 
 # Package description
 An out-of-the-box NLP toolkit can easily help you solve tasks such as
@@ -42,6 +40,10 @@ git clone https://github.com/kyzhouhzau/fennlp.git
 2. install package
 ```
 python setup.py install
+```
+or
+```
+pip install fennlp
 ```
 3. run model
 ```
