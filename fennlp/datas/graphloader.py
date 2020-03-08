@@ -4,97 +4,6 @@ import tensorflow as tf
 import numpy as np
 import os
 from scipy import sparse
-from collections import defaultdict
-
-
-class TuckERLoader():
-    def __init__(self, base_path="data", reverse=True):
-        self.train_data = self.load_data(base_path, 'train.txt', reverse=reverse)
-        self.valid_data = self.load_data(base_path, 'valid.txt', reverse=reverse)
-        self.test_data = self.load_data(base_path, 'test.txt', reverse=reverse)
-        self.data = self.train_data + self.valid_data + self.test_data
-        self.entities = self.get_entities(self.data)
-
-        self.train_relations = self.get_relations(self.train_data)
-        self.valid_relations = self.get_relations(self.valid_data)
-        self.test_relations = self.get_relations(self.test_data)
-
-        self.relations = self.train_relations + \
-                         [i for i in self.valid_relations if i not in self.train_relations] + \
-                         [i for i in self.test_relations if i not in self.train_relations]
-
-        self.entity_idxs = {self.entities[i]: i for i in range(len(self.entities))}
-        self.realtion_idxs = {self.relations[i]: i for i in range(len(self.relations))}
-
-        del self.train_relations
-        del self.test_relations
-        del self.valid_relations
-
-    def data_dump(self, data="train"):
-        if data == "train":
-            data = self.train_data
-        elif data == "valid":
-            data = self.valid_data
-        elif data == "test":
-            data = self.test_data
-        data_idxs = self.get_data_idxs(data)
-        er_vocab = self.get_er_vocab(data_idxs)
-        er_vocab_pairs = list(er_vocab.keys())
-        return er_vocab, er_vocab_pairs
-
-    def load_data(self, base_path, data_type="train", reverse=False):
-        data = []
-        with open(os.path.join(base_path, data_type)) as rf:
-            for line in rf:
-                contents = line.strip().split()
-                data.append(contents)
-                if reverse:
-                    data.append([contents[2], contents[1] + "_reverse", contents[0]])
-            return data
-
-    def get_relations(self, data):
-        relations = sorted(list(set([d[1] for d in data])))
-        return relations
-
-    def get_entities(self, data):
-        entities = sorted(list(set([d[0] for d in data] + [d[2] for d in data])))
-        return entities
-
-    def get_batch(self, er_vocab, er_vocab_pairs, batch_size=32):
-
-        #
-        targets = [er_vocab[key] for key in er_vocab_pairs]
-
-        def generator():
-            for x, y in zip(er_vocab_pairs, targets):
-                yield {'h_r': x, 't': y}
-
-        dataset = tf.data.Dataset.from_generator(
-            generator=generator,
-            output_types={'h_r': tf.int32, 't': tf.int32})
-        dataset = dataset.padded_batch(batch_size,
-                                       padded_shapes={'h_r': [None], 't': [None]},
-                                       drop_remainder=True)
-        return dataset
-
-    def get_data_idxs(self, data):  # data could be self.train_data self.valid_data self.test_data
-        data_idxs = [
-            (self.entity_idxs[data[i][0]], self.realtion_idxs[data[i][1]],
-             self.entity_idxs[data[i][2]]) for i in range(len(data))
-        ]
-        return data_idxs
-
-    def get_er_vocab(self, data_index):
-        er_vocab = defaultdict(list)
-        for triple in data_index:
-            er_vocab[(triple[0], triple[1])].append(triple[2])
-        return er_vocab
-
-    def target_convert(self, targets, batch_size, num_entities):
-        targets_one_hot = np.zeros((batch_size, num_entities))
-        for idx, tar in enumerate(targets):
-            targets_one_hot[idx, tf.gather_nd(tar, tf.where(tar > 0))] = 1
-        return tf.constant(targets_one_hot)
 
 
 class GCNLoader():
@@ -240,7 +149,7 @@ class RGCNLoader(object):
             - deg[edge_index[0]]: (num_edge, num_relation)
             - edge_norm: (num_edge)
         '''
-        one_hot = tf.one_hot(tf.cast(edge_type, np.int32),
+        one_hot = tf.one_hot(tf.cast(edge_type,np.int32),
                              2 * num_relation, dtype=tf.int64)
         one_hot = tf.constant(one_hot.numpy())
         deg = scatter_sum(one_hot, edge_index[0], dim=0, dim_size=num_entity)
@@ -286,5 +195,8 @@ class RGCNLoader(object):
         self.edge_type = edge_type
         self.edge_norm = tf.ones(edge_type.shape)
 
+
         self.samples = tf.constant(samples)
         self.labels = tf.constant(labels)
+
+

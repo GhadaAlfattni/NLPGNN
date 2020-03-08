@@ -17,11 +17,8 @@ Currently it contain the following models (see "tests" dictionary for more detai
 * BERT-Sentence-Classification(Chinese Version, 新闻标题短文本分类)
 * TextCNN(Chinese and English Version, 新闻标题短文本分类)
 * GCN (2 layer)
-* TuckER (English Version, WN18)
 
 # Status
-2020/3/8: add TuckER example "run_tucker.py" for tran TuckER model on "WN18" dataset.
-
 2020/3/3: add test example "tran_text_cnn.py" for train TextCNN model. 
 
 2020/3/2: add test example "train_bert_classification.py" for text classification based on bert.

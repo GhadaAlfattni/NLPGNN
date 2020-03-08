@@ -96,7 +96,3 @@ class FPNNormalization(tf.keras.layers.Layer):
 
     def compute_output_shape(self, input_shape):
         return input_shape
-
-class BatchNormalization(tf.keras.layers.Layer):
-    def __init__(self):
-        pass
