@@ -13,11 +13,11 @@ import numpy as np
 class TuckER(tf.keras.Model):
     # loader.data
     def __init__(self, loader,
-                 ent_vec_dim=100,
+                 ent_vec_dim=200,
                  rel_vec_dim=30,
                  input_dropout=0.2,
-                 hidden_dropout1=0.2,
-                 hidden_dropout2=0.3,
+                 hidden_dropout1=0.1,
+                 hidden_dropout2=0.2,
                   **kwargs):
         super(TuckER, self).__init__(**kwargs)
         self.rel_vec_dim = rel_vec_dim

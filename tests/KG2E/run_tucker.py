@@ -25,7 +25,7 @@ model = tucker.TuckER(loader)
 
 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(lr,decay_steps=1100,decay_rate=0.995)
 
-optimizer = optim.Adam(learning_rate=lr_schedule)
+optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
 # 构建损失函数
 binary_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False,label_smoothing=label_smoothing)
 
