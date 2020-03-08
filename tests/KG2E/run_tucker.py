@@ -53,6 +53,7 @@ for epoch in range(500):
         # filtered_grads_variables =
         optimizer.apply_gradients(grads_and_vars=zip(grads, [variable for variable in model.variables if variable.trainable]))
         Batch += 1
+
     hit1, hit3, hit5, hit10, MR, MRR = evaluate(model, batch_size)
     print("Epoch:{}\tLoss:{:.4f}\tHit@5:{:.4f}\tHit@10:{:.4f}\tMRR{:.4f}\n".format(epoch, np.mean(losses),
                                                                                    hit5,hit10, MRR))
