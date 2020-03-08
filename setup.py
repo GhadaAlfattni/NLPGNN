@@ -11,7 +11,7 @@ URL = 'https://github.com/kyzhouhzau/FenNLP'
 EMAIL = 'zhoukaiyinhzau@gmail.com'
 AUTHOR = 'Kaiyin Zhou'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.0.0'
+VERSION = '0.0.1'
 
 REQUIRED = [
     # 'tensorflow>=2.0',
