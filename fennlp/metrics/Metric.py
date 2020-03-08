@@ -17,11 +17,12 @@
 import tensorflow as tf
 from typeguard import typechecked
 from sklearn.metrics import recall_score, precision_score, f1_score, accuracy_score
-
+from collections import defaultdict
 from .type import AcceptableDTypes, FloatTensorLike
 from typing import Optional
 
 import warnings
+import numpy as np
 
 warnings.filterwarnings('ignore')
 
@@ -237,9 +238,10 @@ class KSparseF1Score(FBetaScore):
 
 
 class SparseF1Score(object):
-    def __init__(self, average,predict_sparse=False):
+    def __init__(self, average, predict_sparse=False):
         self.average = average
         self.predict_sparse = predict_sparse
+
     def __call__(self, y_true, y_predict):
         y_true = tf.reshape(tf.constant(y_true), [-1]).numpy()
 
@@ -252,12 +254,10 @@ class SparseF1Score(object):
         return f1
 
 
-
 class SparseRecallScore(object):
-    def __init__(self, average,predict_sparse=False):
+    def __init__(self, average, predict_sparse=False):
         self.average = average
-        self.predict_sparse= predict_sparse
-
+        self.predict_sparse = predict_sparse
 
     def __call__(self, y_true, y_predict):
         if self.predict_sparse:
@@ -270,7 +270,7 @@ class SparseRecallScore(object):
 
 
 class SparsePrecisionScore(object):
-    def __init__(self, average,predict_sparse=False):
+    def __init__(self, average, predict_sparse=False):
         self.average = average
         self.predict_sparse = predict_sparse
 
@@ -286,7 +286,7 @@ class SparsePrecisionScore(object):
 
 
 class SparseAccuracy(object):
-    def __init__(self,predict_sparse=False):
+    def __init__(self, predict_sparse=False):
         self.predict_sparse = predict_sparse
 
     def __call__(self, y_true, y_predict):
@@ -298,3 +298,58 @@ class SparseAccuracy(object):
             y_predict = tf.reshape(tf.argmax(y_predict, -1), [-1]).numpy()
         acc = accuracy_score(y_true, y_predict)
         return acc
+
+
+class HitN_MR_MRR():
+    def __init__(self, loader, mode="valid"):
+        self.mode = mode
+        self.loader = loader
+        if self.mode == "train":
+            self.data_idxs = loader.get_data_idxs(loader.train_data)
+        elif self.mode == "valid":
+            self.data_idxs = loader.get_data_idxs(loader.valid_data)  # valid数据集合中的三元组
+        elif self.mode == "test":
+            self.data_idxs = loader.get_data_idxs(loader.test_data)
+        # er_vocb={(h,r):[t1,t2]},train+valid
+        self.er_vocab = loader.get_er_vocab(loader.get_data_idxs(loader.data))
+        self.ranks = 0
+        self.hits = defaultdict(int)
+        for i in range(10):
+            self.hits[i] = 0
+
+    def __call__(self, model, batch_size):
+        length_hit = 0
+        length_rank = 0
+        for data in self.loader.get_batch(self.er_vocab, self.data_idxs, batch_size=batch_size):
+            # actually here h_r is h_r_t
+            h_idx = data['h_r'][:, 0]
+            r_idx = data['h_r'][:, 1]
+            t_idx = data['h_r'][:, 2]
+            hrt = data["h_r"].numpy()
+            predict = model.predict(h_idx, r_idx)
+            predict = predict.numpy()
+            for j in range(hrt.shape[0]):
+                # 也就是说对于当前样本仅仅考虑目标尾实体的得分，而其他的也是真实尾实体得分被置为0。
+                filt = self.er_vocab[(hrt[j][0], hrt[j][1])]
+                target_value = predict[j, t_idx[j]]
+                predict[j, filt] = 0.0
+                predict[j, t_idx[j]] = target_value
+            sort_idxs = tf.argsort(predict, axis=1, direction='DESCENDING')
+            del predict
+            for j in range(hrt.shape[0]):
+                rank = np.where(sort_idxs[j] == t_idx[j])[0][0]
+                self.ranks = self.ranks + (rank + 1)
+                length_rank += 1
+                for hits_level in range(10):
+                    if rank <= hits_level:
+                        self.hits[hits_level] += 1.0
+                    length_hit += 1
+            del sort_idxs
+
+        hit10 = self.hits[9] / length_hit
+        hit5 = self.hits[4] / length_hit
+        hit3 = self.hits[2] / length_hit
+        hit1 = self.hits[0] / length_hit
+        MR = self.ranks / length_rank
+        MRR = (1. / self.ranks) / length_rank
+        return hit1, hit3, hit5, hit10, MR, MRR
