@@ -18,14 +18,14 @@ class TuckER(tf.keras.Model):
                  input_dropout=0.2,
                  hidden_dropout1=0.1,
                  hidden_dropout2=0.2,
-                  **kwargs):
+                 **kwargs):
         super(TuckER, self).__init__(**kwargs)
         self.rel_vec_dim = rel_vec_dim
         self.ent_vec_dim = ent_vec_dim
-        self.E = tf.keras.layers.Embedding(len(loader.entities),
-                                           ent_vec_dim)
-        self.R = tf.keras.layers.Embedding(len(loader.relations),
-                                           rel_vec_dim)
+        self.E = tf.keras.layers.Embedding(len(loader.entities)+1,
+                                           ent_vec_dim,mask_zero=True)
+        self.R = tf.keras.layers.Embedding(len(loader.relations)+1,
+                                           rel_vec_dim,mask_zero=True)
 
         self.input_dropout = tf.keras.layers.Dropout(input_dropout)
         self.hidden_dropout1 = tf.keras.layers.Dropout(hidden_dropout1)

@@ -82,6 +82,7 @@ class TuckERLoader():
             (self.entity_idxs[data[i][0]], self.realtion_idxs[data[i][1]],
              self.entity_idxs[data[i][2]]) for i in range(len(data))
         ]
+        print("Number of data points: %d" % len(data_idxs))
         return data_idxs
 
     def get_er_vocab(self, data_index):

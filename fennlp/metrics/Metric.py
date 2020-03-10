@@ -312,14 +312,13 @@ class HitN_MR_MRR():
             self.data_idxs = loader.get_data_idxs(loader.test_data)
         # er_vocb={(h,r):[t1,t2]},train+valid
         self.er_vocab = loader.get_er_vocab(loader.get_data_idxs(loader.data))
-        self.ranks = 0
-        self.hits = defaultdict(int)
-        for i in range(10):
-            self.hits[i] = 0
+
 
     def __call__(self, model, batch_size):
-        length_hit = 0
-        length_rank = 0
+        ranks = []
+        hits = defaultdict(list)
+        for i in range(10):
+            hits[i] = []
         for data in self.loader.get_batch(self.er_vocab, self.data_idxs, batch_size=batch_size):
             # actually here h_r is h_r_t
             h_idx = data['h_r'][:, 0]
@@ -338,18 +337,18 @@ class HitN_MR_MRR():
             del predict
             for j in range(hrt.shape[0]):
                 rank = np.where(sort_idxs[j] == t_idx[j])[0][0]
-                self.ranks = self.ranks + (rank + 1)
-                length_rank += 1
+                ranks.append(rank + 1)
                 for hits_level in range(10):
                     if rank <= hits_level:
-                        self.hits[hits_level] += 1.0
-                    length_hit += 1
+                        hits[hits_level].append(1.0)
+                    else:
+                        hits[hits_level].append(0.0)
             del sort_idxs
 
-        hit10 = self.hits[9] / length_hit
-        hit5 = self.hits[4] / length_hit
-        hit3 = self.hits[2] / length_hit
-        hit1 = self.hits[0] / length_hit
-        MR = self.ranks / length_rank
-        MRR = (1. / self.ranks) / length_rank
+        hit10 = np.mean(hits[9])
+        hit5 = np.mean(hits[4])
+        hit3 = np.mean(hits[2])
+        hit1 = np.mean(hits[0])
+        MR = np.mean(ranks)
+        MRR =np.mean(1./np.array(ranks))
         return hit1, hit3, hit5, hit10, MR, MRR
