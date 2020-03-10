@@ -74,9 +74,21 @@ checkpoint.restore(tf.train.latest_checkpoint('./save'))
 # For test model
 # print(dir(checkpoint))
 Batch = 0
+f1s = []
+precisions = []
+recalls = []
+accuracys = []
 for X, token_type_id, input_mask, Y in ner_load.load_valid():
     predict = model.predict([X, token_type_id, input_mask, Y])  # [batch_size, max_length,label_size]
+    f1s.append(f1score(Y, predict))
+    precisions.append(precsionscore(Y, predict))
+    recalls.append(recallscore(Y, predict))
+    accuracys.append(accuarcyscore(Y, predict))
 
-    print("Sentence", writer.convert_id_to_vocab(tf.reshape(X, [-1]).numpy()))
-
-    print("Label", writer.convert_id_to_label(tf.reshape(predict, [-1]).numpy()))
+    # print("Sentence", writer.convert_id_to_vocab(tf.reshape(X, [-1]).numpy()))
+    #
+    # print("Label", writer.convert_id_to_label(tf.reshape(predict, [-1]).numpy()))
+print("f1:{}\tprecision:{}\trecall:{}\taccuracy:{}\n".format(np.mean(f1s),
+                                                             np.mean(precisions),
+                                                             np.mean(recalls),
+                                                             np.mean(accuracys)))

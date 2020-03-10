@@ -3,8 +3,7 @@ from fennlp.models import bert
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import ZHTFWriter, ZHTFLoader
 from fennlp.metrics import Metric
-from fennlp.metrics.crf import crf_decode,crf_log_likelihood
-
+import numpy as np
 # 载入参数
 load_check = LoadCheckpoint()
 param, vocab_file, model_path = load_check.load_bert_param()
@@ -64,11 +63,22 @@ checkpoint.restore(tf.train.latest_checkpoint('./save'))
 # For test model
 # print(dir(checkpoint))
 Batch = 0
+f1s = []
+precisions = []
+recalls = []
+accuracys = []
 for X, token_type_id, input_mask, Y in ner_load.load_valid():
-    output = model.predict([X, token_type_id, input_mask])#[batch_size, max_length,label_size]
-    predict = tf.argmax(output,-1)
+    predict = model.predict([X, token_type_id, input_mask])  # [batch_size, max_length,label_size]
+    # predict = tf.argmax(output, -1)
+    f1s.append(f1score(Y, predict))
+    precisions.append(precsionscore(Y, predict))
+    recalls.append(recallscore(Y, predict))
+    accuracys.append(accuarcyscore(Y, predict))
 
-
-    print("Sentence", writer.convert_id_to_vocab(tf.reshape(X,[-1]).numpy()))
-
-    print("Label", writer.convert_id_to_label(tf.reshape(predict,[-1]).numpy()))
+print("f1:{}\tprecision:{}\trecall:{}\taccuracy:{}\n".format(np.mean(f1s),
+                                                             np.mean(precisions),
+                                                             np.mean(recalls),
+                                                             np.mean(accuracys)))
+    # print("Sentence", writer.convert_id_to_vocab(tf.reshape(X,[-1]).numpy()))
+    #
+    # print("Label", writer.convert_id_to_label(tf.reshape(predict,[-1]).numpy()))

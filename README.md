@@ -44,10 +44,6 @@ git clone https://github.com/kyzhouhzau/fennlp.git
 ```
 python setup.py install
 ```
-or
-```
-pip install fennlp
-```
 3. run model
 ```
 python bert_ner_train.py

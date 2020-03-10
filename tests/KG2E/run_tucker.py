@@ -47,6 +47,10 @@ for epoch in range(500):
             loss = binary_loss(targets, predict)
             loss = tf.reduce_mean(loss)
             losses.append(loss.numpy())
+            hit1, hit3, hit5, hit10, MR, MRR = evaluate(model, batch_size)
+            print("Epoch:{}\tLoss:{:.4f}\tHit@5:{:.4f}\tHit@10:{:.4f}\tMRR{:.4f}\n".format(epoch, np.mean(losses),
+                                                                                           hit5, hit10, MRR))
+
         # For filter Warning in calculate gradient of moving_mean and moving_variance
         grads = tape.gradient(loss, [variable for variable in model.variables if variable.trainable])
         optimizer.apply_gradients(
@@ -54,6 +58,3 @@ for epoch in range(500):
 
         Batch += 1
 
-    hit1, hit3, hit5, hit10, MR, MRR = evaluate(model, batch_size)
-    print("Epoch:{}\tLoss:{:.4f}\tHit@5:{:.4f}\tHit@10:{:.4f}\tMRR{:.4f}\n".format(epoch, np.mean(losses),
-                                                                                   hit5, hit10, MRR))
