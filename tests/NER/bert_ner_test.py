@@ -9,7 +9,7 @@ load_check = LoadCheckpoint()
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 2
+param["batch_size"] = 16
 param["maxlen"] = 100
 param["label_size"] = 46
 
@@ -47,7 +47,7 @@ model.summary()
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = ZHTFWriter(param["maxlen"], vocab_file,
-                    modes=["Valid"], check_exist=True)
+                    modes=["valid"], check_exist=True)
 
 ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=3)
 

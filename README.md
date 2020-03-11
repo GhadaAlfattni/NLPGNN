@@ -120,10 +120,10 @@ _________________________________________________________________
 
 Using the default parameters, we get the following results on "中文糖尿病标注数据集" valid data.
 
-|model|  macro-F1   | macro-P  | macro-R  | ACC  |
-| ------- |  -------| -------  | -------  | ------- |
-| bert+crf | 0.6288  | 0.6507 | 0.6493 | 0.9835 |
-|   bert   |         |        |        |        |
+|model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
+| ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
+| bert+crf| 0.6288  | 0.6507 | 0.6493 | 0.9835  |1e-5    |3       |100     |16        |
+|   bert  | 0.6308  | 0.6593 | 0.6429 | 0.9846  |1e-5    |3       |100     |16        |
 
 # For Sentence Classfication
 
