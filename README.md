@@ -77,6 +77,20 @@ bert = bert.BERT()
 python bert_ner_train.py
 ```
 
+```
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+bert (BERT)                  multiple                  101677056 
+_________________________________________________________________
+dense (Dense)                multiple                  35374     
+=================================================================
+Total params: 101,712,430
+Trainable params: 101,712,430
+Non-trainable params: 0
+_________________________________________________________________
+```
+
 ### 2、bert + crf
 ```python
 from fennlp.models import bert
@@ -103,6 +117,14 @@ Trainable params: 101,714,546
 Non-trainable params: 0
 _________________________________________________________________
 ```
+
+Using the default parameters, we get the following results on "中文糖尿病标注数据集" valid data.
+
+|model|  macro-F1   | macro-P  | macro-R  | ACC  |
+| ------- |  -------| -------  | -------  | ------- |
+| bert+crf | 0.6288  | 0.6507 | 0.6493 | 0.9835 |
+|   bert   |         |        |        |        |
+
 
 # For Sentence Classfication
 
