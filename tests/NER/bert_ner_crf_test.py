@@ -10,7 +10,7 @@ load_check = LoadCheckpoint()
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 2
+param["batch_size"] = 16
 param["maxlen"] = 100
 param["label_size"] = 46
 
@@ -58,15 +58,15 @@ model.summary()
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = ZHTFWriter(param["maxlen"], vocab_file,
-                    modes=["Valid"], check_exist=True)
+                    modes=["valid"], check_exist=True)
 
 ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=3)
 
 # Metrics
-f1score = Metric.SparseF1Score("macro")
-precsionscore = Metric.SparsePrecisionScore("macro")
-recallscore = Metric.SparseRecallScore("macro")
-accuarcyscore = Metric.SparseAccuracy()
+f1score = Metric.SparseF1Score("macro",predict_sparse=True)
+precsionscore = Metric.SparsePrecisionScore("macro",predict_sparse=True)
+recallscore = Metric.SparseRecallScore("macro",predict_sparse=True)
+accuarcyscore = Metric.SparseAccuracy(predict_sparse=True)
 
 # 保存模型
 checkpoint = tf.train.Checkpoint(model=model)
@@ -80,11 +80,11 @@ recalls = []
 accuracys = []
 for X, token_type_id, input_mask, Y in ner_load.load_valid():
     predict = model.predict([X, token_type_id, input_mask, Y])  # [batch_size, max_length,label_size]
+
     f1s.append(f1score(Y, predict))
     precisions.append(precsionscore(Y, predict))
     recalls.append(recallscore(Y, predict))
     accuracys.append(accuarcyscore(Y, predict))
-
     # print("Sentence", writer.convert_id_to_vocab(tf.reshape(X, [-1]).numpy()))
     #
     # print("Label", writer.convert_id_to_label(tf.reshape(predict, [-1]).numpy()))

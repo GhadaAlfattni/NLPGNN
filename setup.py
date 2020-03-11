@@ -5,16 +5,15 @@ from setuptools import find_packages, setup
 
 # Package meta-data.
 NAME = 'fennlp'
-DESCRIPTION = 'An out-of-the-box NLP toolkit can easily help you solve tasks such ' \
-              'as entity recognition, relationship extraction, text classfication and so on.'
-URL = 'https://github.com/kyzhouhzau/FenNLP'
+DESCRIPTION = 'An out-of-the-box NLP toolkit can easily help you solve tasks such as\
+              Entity Recognition, Text Classification, Relation Extraction and so on.'
+URL = 'https://github.com/kyzhouhzau/fennlp'
 EMAIL = 'zhoukaiyinhzau@gmail.com'
 AUTHOR = 'Kaiyin Zhou'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = '0.0.1'
 
 REQUIRED = [
-    # 'tensorflow>=2.0',
     'typeguard',
     'gensim'
 ]
