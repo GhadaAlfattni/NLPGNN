@@ -125,7 +125,6 @@ Using the default parameters, we get the following results on "中文糖尿病�
 | bert+crf | 0.6288  | 0.6507 | 0.6493 | 0.9835 |
 |   bert   |         |        |        |        |
 
-
 # For Sentence Classfication
 
 ## Input
