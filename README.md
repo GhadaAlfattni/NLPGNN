@@ -122,8 +122,8 @@ Using the default parameters, we get the following results on "中文糖尿病�
 
 |model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
-| bert+crf| 0.6288  | 0.6507 | 0.6493 | 0.9835  |1e-5    |3       |100     |16        |
-|   bert  | 0.6308  | 0.6593 | 0.6429 | 0.9846  |1e-5    |3       |100     |16        |
+| bert+crf| 0.6288  | 0.6507 | 0.6493 | 0.9835  |1e-5    |    3   |  100   |    16    |
+|   bert  | 0.6308  | 0.6593 | 0.6429 | 0.9846  |1e-5    |    3   |  100   |    16    |
 
 # For Sentence Classfication
 
@@ -147,6 +147,8 @@ bert = bert.BERT()
 python train_bert_classification.py
 ```
 
+
+
 ### 2、TextCNN
 
 ```python
@@ -163,6 +165,13 @@ TODO: use "WordPiece embedding" to Initialize word embedding.
 ```
 For more detail about reference [WordPiece](https://mp.weixin.qq.com/s/Il8sh66TUCEPskbypDZLAg) 
 
+
+Using the default parameters, we get the following results on "中文糖尿病标注数据集" valid data.
+
+|model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
+| ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
+| bert+softmax| 0.7559 | 0.7520 | 0.7949 | 0.8313  |1e-5    |    3   |  50   |    32    |
+|  TextCNN    | 0.7030 | 0.6927 | 0.7390| 0.7554|  0.0001  |  3   | 50 |   128  |
 # For GCN：
 
 ## Input

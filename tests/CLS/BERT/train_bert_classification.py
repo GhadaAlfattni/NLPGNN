@@ -11,8 +11,8 @@ load_check = LoadCheckpoint()
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 2
-param["maxlen"] = 50
+param["batch_size"] = 32
+param["maxlen"] = 45
 param["label_size"] = 15
 
 
@@ -44,8 +44,10 @@ model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
 
 model.summary()
 
+lr_schedule = tf.keras.optimizers.schedules.PolynomialDecay(2e-5, decay_steps=10000, end_learning_rate=0.0)
+
 # 构建优化器
-optimizer_bert = optim.Adam(learning_rate=1e-5)
+optimizer_bert = optim.Adam(learning_rate=lr_schedule)
 #
 # # 构建损失函数
 mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False)
@@ -58,9 +60,9 @@ init_weights_from_checkpoint(model,
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = ZHTFWriter(param["maxlen"], vocab_file,
-                    modes=["train"], task='cls', check_exist=True)
+                    modes=["train"], task='cls', check_exist=False)
 
-load = ZHTFLoader(param["maxlen"], param["batch_size"],task='cls', epoch=3)
+load = ZHTFLoader(param["maxlen"], param["batch_size"], task='cls', epoch=3)
 
 # 训练模型
 # 使用tensorboard
@@ -88,7 +90,7 @@ for X, token_type_id, input_mask, Y in load.load_train():
         precision = precsionscore(Y, predict)
         recall = recallscore(Y, predict)
         accuracy = accuarcyscore(Y, predict)
-        if Batch % 21 == 0:
+        if Batch % 101 == 0:
             print("Batch:{}\tloss:{:.4f}".format(Batch, loss.numpy()))
             print("Batch:{}\tacc:{:.4f}".format(Batch, accuracy))
             print("Batch:{}\tprecision{:.4f}".format(Batch, precision))

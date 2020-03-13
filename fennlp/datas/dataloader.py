@@ -207,5 +207,5 @@ class ZHTFLoader(object):
             tf.data.experimental.map_and_batch(
                 lambda record: self.decode_record(record),
                 batch_size=self.batch_size,
-                drop_remainder=False))
+                drop_remainder=True))
         return dataset

@@ -244,46 +244,6 @@ class CrfLogLikelihood(tf.keras.layers.Layer):
                 tf.equal(tf.shape(potentials)[1], 1), _single_seq_fn,
                 _multi_seq_fn)
 
-
-def crf_log_likelihood(inputs,
-                       tag_indices,
-                       sequence_lengths,
-                       transition_params=None):
-    """Computes the log-likelihood of tag sequences in a CRF.
-    Args:
-      inputs: A [batch_size, max_seq_len, num_tags] tensor of unary potentials
-          to use as input to the CRF layer.
-      tag_indices: A [batch_size, max_seq_len] matrix of tag indices for which
-          we compute the log-likelihood.
-      sequence_lengths: A [batch_size] vector of true sequence lengths.
-      transition_params: A [num_tags, num_tags] transition matrix,
-          if available.
-    Returns:
-      log_likelihood: A [batch_size] `Tensor` containing the log-likelihood of
-        each example, given the sequence of tag indices.
-      transition_params: A [num_tags, num_tags] transition matrix. This is
-          either provided by the caller or created in this function.
-    """
-    num_tags = inputs.shape[2]
-
-    # cast type to handle different types
-    tag_indices = tf.cast(tag_indices, dtype=tf.int32)
-    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
-
-    if transition_params is None:
-        initializer = tf.keras.initializers.GlorotUniform()
-        transition_params = tf.Variable(
-            initializer([num_tags, num_tags]), "transitions")
-
-    sequence_scores = crf_sequence_score(inputs, tag_indices, sequence_lengths,
-                                         transition_params)
-    log_norm = crf_log_norm(inputs, sequence_lengths, transition_params)
-
-    # Normalize the scores to get the log-likelihood per example.
-    log_likelihood = sequence_scores - log_norm
-    return log_likelihood, transition_params
-
-
 def crf_unary_score(tag_indices, sequence_lengths, inputs):
     """Computes the unary scores of tag sequences.
     Args:
@@ -302,22 +262,22 @@ def crf_unary_score(tag_indices, sequence_lengths, inputs):
 
     flattened_inputs = tf.reshape(inputs, [-1])
 
-    offsets = tf.expand_dims(tf.range(batch_size) * max_seq_len * num_tags, 1)
-    offsets += tf.expand_dims(tf.range(max_seq_len) * num_tags, 0)
+    offsets = tf.expand_dims(tf.range(batch_size) * max_seq_len * num_tags, 1)#计算每一个batch起始位置
+    offsets += tf.expand_dims(tf.range(max_seq_len) * num_tags, 0)#计算每一个step的预测结果的起始位置
     # Use int32 or int64 based on tag_indices' dtype.
     if tag_indices.dtype == tf.int64:
         offsets = tf.cast(offsets, tf.int64)
-    flattened_tag_indices = tf.reshape(offsets + tag_indices, [-1])
+    flattened_tag_indices = tf.reshape(offsets + tag_indices, [-1])# 这就获得每一个标签所在的index
 
     unary_scores = tf.reshape(
         tf.gather(flattened_inputs, flattened_tag_indices),
-        [batch_size, max_seq_len])
+        [batch_size, max_seq_len])# 将每一个标签所在的index取出来，获得模型预测得分
 
     masks = tf.sequence_mask(
         sequence_lengths, maxlen=tf.shape(tag_indices)[1], dtype=tf.float32)
 
     unary_scores = tf.reduce_sum(unary_scores * masks, 1)
-    return unary_scores
+    return unary_scores# 获得模型预测得分
 
 
 def crf_binary_score(tag_indices, sequence_lengths, transition_params):
@@ -341,6 +301,7 @@ def crf_binary_score(tag_indices, sequence_lengths, transition_params):
     end_tag_indices = tf.slice(tag_indices, [0, 1], [-1, num_transitions])
 
     # Encode the indices in a flattened representation.
+    # 太巧妙了
     flattened_transition_indices = start_tag_indices * \
                                    num_tags + end_tag_indices
     flattened_transition_params = tf.reshape(transition_params, [-1])
