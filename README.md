@@ -163,10 +163,10 @@ python train_text_cnn.py
 ```
 TODO: use "WordPiece embedding" to Initialize word embedding.
 ```
-For more detail about reference [WordPiece](https://mp.weixin.qq.com/s/Il8sh66TUCEPskbypDZLAg) 
+For more detail reference [WordPiece](https://mp.weixin.qq.com/s/Il8sh66TUCEPskbypDZLAg) 
 
 
-Using the default parameters, we get the following results on "中文糖尿病标注数据集" valid data.
+Using the default parameters, we get the following results on "新闻标题短文本分类" valid data.
 
 |model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
