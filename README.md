@@ -12,10 +12,10 @@ An out-of-the-box NLP toolkit can easily help you solve tasks such as
 Entity Recognition, Text Classification, Relation Extraction and so on.
 Currently it contain the following models (see "tests" dictionary for more details):
 * BERT (tf2.0 layer, Chinese and English Version)
-* BERT-NER (Chinese Version, 中文糖尿病标注数据集)
-* BERT-CRF-NER (Chinese Version, 中文糖尿病标注数据集)
-* BERT-Sentence-Classification(Chinese Version, 新闻标题短文本分类)
-* TextCNN(Chinese and English Version, 新闻标题短文本分类)
+* BERT-NER (Chinese and English Version)
+* BERT-CRF-NER (Chinese and English Version)
+* BERT-Sentence-Classification(Chinese and English Version)
+* TextCNN(Chinese and English Version)
 * GCN (2 Layer, CORA data set)
 * TuckER (English Version, WN18 data set)
 
