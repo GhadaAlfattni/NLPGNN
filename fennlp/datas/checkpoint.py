@@ -7,9 +7,15 @@ import json
 
 
 class LoadCheckpoint(object):
-    def __init__(self):
-        url = "https://storage.googleapis.com/bert_models/" \
-              "2018_11_03/chinese_L-12_H-768_A-12.zip"
+    def __init__(self, langurage='zh'):
+        self.lg = langurage
+        if langurage == "zh":
+
+            url = "https://storage.googleapis.com/bert_models/" \
+                  "2018_11_03/chinese_L-12_H-768_A-12.zip"
+        elif langurage == "en":
+            url = "https://storage.googleapis.com/bert_models/" \
+                  "2018_10_18/uncased_L-12_H-768_A-12.zip"
         self.url = url
         self.size = self.getsize()
         self.unzip()
@@ -53,20 +59,22 @@ class LoadCheckpoint(object):
         zip_file = zipfile.ZipFile(filename)
         zip_file.extractall()
 
-    def load_bert_param(self,pretraining=False):
+    def load_bert_param(self, pretraining=False):
         filename = self.url.split('/')[-1]
         config = "{}/{}".format(filename.split('.')[0], "bert_config.json")
         vocab_file = "{}/{}".format(filename.split('.')[0], "vocab.txt")
         model_path = "{}/{}".format(filename.split('.')[0], "bert_model.ckpt")
         bert_param = json.load(open(config, 'r'))
-        if not pretraining:
+        if not pretraining and self.lg == 'zh':
             bert_param.pop("directionality")
             bert_param.pop("pooler_fc_size")
             bert_param.pop("pooler_num_attention_heads")
             bert_param.pop("pooler_num_fc_layers")
             bert_param.pop("pooler_size_per_head")
             bert_param.pop("pooler_type")
-        bert_param["batch_size"]=32
-        bert_param["maxlen"]=80
-        bert_param["label_size"]=10
+        if not pretraining and self.lg == 'en':
+            pass
+        bert_param["batch_size"] = 32
+        bert_param["maxlen"] = 80
+        bert_param["label_size"] = 10
         return bert_param, vocab_file, model_path

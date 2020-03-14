@@ -10,7 +10,6 @@ import pickle
 class ZHTFWriter(object):
     def __init__(self, maxlen, vocab_files, modes, task="NER", do_low_case=True,
                  check_exist=False):
-        self.language = "zh"
         self.maxlen = maxlen
         self.fulltoknizer = tokenization.FullTokenizer(
             vocab_file=vocab_files, do_lower_case=do_low_case

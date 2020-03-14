@@ -4,17 +4,17 @@ from fennlp.optimizers import optim
 from fennlp.tools import init_weights_from_checkpoint
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import ZHTFWriter, ZHTFLoader
-from fennlp.metrics import Metric
-from fennlp.metrics.crf import CrfLogLikelihood
+from fennlp.metrics import Metric, Losess
 
 # 载入参数
-load_check = LoadCheckpoint()
+load_check = LoadCheckpoint(langurage='en')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 16
-param["maxlen"] = 100
-param["label_size"] = 46
+param["batch_size"] = 8
+param["maxlen"] = 128
+param["label_size"] = 9
+
 
 # 构建模型
 class BERT_NER(tf.keras.Model):
@@ -23,43 +23,37 @@ class BERT_NER(tf.keras.Model):
         self.batch_size = param["batch_size"]
         self.maxlen = param["maxlen"]
         self.label_size = param["label_size"]
+
         self.bert = bert.BERT(param)
+
         self.dense = tf.keras.layers.Dense(self.label_size, activation="relu")
-        self.crf = CrfLogLikelihood()
 
     def call(self, inputs, is_training=True):
-        # 数据切分
-        input_ids, token_type_ids, input_mask,Y = tf.split(inputs, 4, 0)
-        input_ids = tf.cast(tf.squeeze(input_ids, axis=0), tf.int64)
-        token_type_ids = tf.cast(tf.squeeze(token_type_ids, axis=0), tf.int64)
-        input_mask = tf.cast(tf.squeeze(input_mask, axis=0), tf.int64)
-        Y = tf.cast(tf.squeeze(Y, axis=0), tf.int64)
-        # 模型构建
-        bert = self.bert([input_ids, token_type_ids, input_mask], is_training)
+        bert = self.bert(inputs, is_training)
         sequence_output = bert.get_sequence_output()  # batch,sequence,768
-        predict = self.dense(sequence_output)
-        predict = tf.reshape(predict, [self.batch_size, self.maxlen, -1])
-        # 损失计算
-        log_likelihood, transition = self.crf(predict, Y, sequence_lengths=tf.reduce_sum(input_mask, 1))
-        loss = tf.math.reduce_mean(-log_likelihood)
-        predict, viterbi_score = self.crf.crf_decode(predict, transition,
-                                                         sequence_length=tf.reduce_sum(input_mask, 1))
-        return loss,predict
+        pre = self.dense(sequence_output)
+        pre = tf.reshape(pre, [self.batch_size, self.maxlen, -1])
+        output = tf.math.softmax(pre, axis=-1)
+        return output
 
     def predict(self, inputs, is_training=False):
-        loss,predict = self(inputs, is_training)
-        return predict
+        output = self(inputs, is_training=is_training)
+        return output
 
 
 model = BERT_NER(param)
 
-model.build(input_shape=(4, param["batch_size"], param["maxlen"]))
+model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
 
 model.summary()
 
 # 构建优化器
-optimizer_bert = optim.Adam(learning_rate=1e-5)
-# optimizer_crf = optim.Adam(learning_rate=1e-4)
+lr = tf.keras.optimizers.schedules.PolynomialDecay(2e-5,decay_steps=10000,end_learning_rate=0.0)
+optimizer_bert = optim.Adam(learning_rate=lr)
+# optimizer_bert = tf.keras.optimizers.Adam(1e-5)
+
+# 构建损失函数
+mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False)
 
 # 初始化参数
 init_weights_from_checkpoint(model,
@@ -69,19 +63,19 @@ init_weights_from_checkpoint(model,
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = ZHTFWriter(param["maxlen"], vocab_file,
-                    modes=["train"], check_exist=True)
+                    modes=["train"], check_exist=False)
 
-ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=3)
+ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=8)
 
 # 训练模型
 # 使用tensorboard
 summary_writer = tf.summary.create_file_writer("./tensorboard")
 
 # Metrics
-f1score = Metric.SparseF1Score(average="macro", predict_sparse=True)
-precsionscore = Metric.SparsePrecisionScore(average="macro", predict_sparse=True)
-recallscore = Metric.SparseRecallScore(average="macro", predict_sparse=True)
-accuarcyscore = Metric.SparseAccuracy(predict_sparse=True)
+f1score = Metric.SparseF1Score(average="macro")
+precsionscore = Metric.SparsePrecisionScore(average="macro")
+recallscore = Metric.SparseRecallScore(average="macro")
+accuarcyscore = Metric.SparseAccuracy()
 
 # 保存模型
 checkpoint = tf.train.Checkpoint(model=model)
@@ -91,14 +85,15 @@ manager = tf.train.CheckpointManager(checkpoint, directory="./save",
 # For train model
 Batch = 0
 for X, token_type_id, input_mask, Y in ner_load.load_train():
-    with tf.GradientTape(persistent=True) as tape:
-        loss,predict = model([X, token_type_id, input_mask,Y])
+    with tf.GradientTape() as tape:
+        predict = model([X, token_type_id, input_mask])
+        loss = mask_sparse_categotical_loss(Y, predict,use_mask=False)
 
         f1 = f1score(Y, predict)
         precision = precsionscore(Y, predict)
         recall = recallscore(Y, predict)
         accuracy = accuarcyscore(Y, predict)
-        if Batch % 21 == 0:
+        if Batch % 101 == 0:
             print("Batch:{}\tloss:{:.4f}".format(Batch, loss.numpy()))
             print("Batch:{}\tacc:{:.4f}".format(Batch, accuracy))
             print("Batch:{}\tprecision{:.4f}".format(Batch, precision))
@@ -113,8 +108,6 @@ for X, token_type_id, input_mask, Y in ner_load.load_train():
             tf.summary.scalar("precision", precision, step=Batch)
             tf.summary.scalar("recall", recall, step=Batch)
 
-    grads_bert = tape.gradient(loss, model.bert.variables+model.dense.variables)
-    # grads_crf = tape.gradient(loss, model.crf.variables)
-    optimizer_bert.apply_gradients(grads_and_vars=zip(grads_bert, model.bert.variables+model.dense.variables))
-    # optimizer_crf.apply_gradients(grads_and_vars=zip(grads_crf, model.crf.variables))
+    grads_bert = tape.gradient(loss, model.variables)
+    optimizer_bert.apply_gradients(grads_and_vars=zip(grads_bert, model.variables))
     Batch += 1

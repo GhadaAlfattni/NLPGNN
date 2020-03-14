@@ -13,5 +13,5 @@ class MaskSparseCategoricalCrossentropy():
             cross_entropy = tf.reduce_sum(cross_entropy * input_mask) / tf.reduce_sum(input_mask)  # mask loss
             return cross_entropy
         else:
-            return tf.reduce_mean(cross_entropy)
+            return cross_entropy
 

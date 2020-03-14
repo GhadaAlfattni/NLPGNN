@@ -16,12 +16,10 @@ class Adam(tf.keras.optimizers.Optimizer):
                  beta_1=0.9,
                  beta_2=0.999,
                  epsilon=1e-6,
-                 decay_steps=0.,
                  bias_correction=True,
                  name='Adam',
                  **kwargs):
         """
-        :param decay_steps:学习率线性衰减
         :param warmup_steps: 学习率在指定的步数线性增长到目标学习率
         :param learning_rate:
         :param beta_1:
@@ -32,7 +30,6 @@ class Adam(tf.keras.optimizers.Optimizer):
         :param kwargs:
         """
         super(Adam, self).__init__(name, **kwargs)
-        self._set_hyper("decay_steps", float(decay_steps))
         self._set_hyper('learning_rate', learning_rate)
         self._set_hyper('min_lr', min_lr)
         self._set_hyper('beta_1', beta_1)
@@ -58,11 +55,6 @@ class Adam(tf.keras.optimizers.Optimizer):
         local_step = tf.cast(self.iterations + 1, var_dtype)
         beta_1_t_power = tf.math.pow(beta_1_t, local_step)
         beta_2_t_power = tf.math.pow(beta_2_t, local_step)
-        # 学习率线性衰减
-        decay_steps = self._get_hyper('decay_steps', var_dtype)
-        if decay_steps > 0.:
-            lr_t = min_lr + (lr_t - min_lr) * (1.0 - tf.math.minimum(local_step, decay_steps) / decay_steps)
-            lr_t = (lr_t * tf.math.sqrt(1 - beta_2_t_power) / (1 - beta_1_t_power))
 
         if indices is None:
             # update 与 state_ops.assign(x,new_x)相同均是赋值含义

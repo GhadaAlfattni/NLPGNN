@@ -6,7 +6,7 @@ from fennlp.metrics import Metric
 from fennlp.metrics.crf import CrfLogLikelihood
 
 # 载入参数
-load_check = LoadCheckpoint()
+load_check = LoadCheckpoint(langurage='zh')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
@@ -60,7 +60,7 @@ model.summary()
 writer = ZHTFWriter(param["maxlen"], vocab_file,
                     modes=["valid"], check_exist=True)
 
-ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=3)
+ner_load = ZHTFLoader(param["maxlen"], param["batch_size"])
 
 # Metrics
 f1score = Metric.SparseF1Score("macro",predict_sparse=True)

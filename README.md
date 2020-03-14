@@ -118,12 +118,13 @@ Non-trainable params: 0
 _________________________________________________________________
 ```
 
-Using the default parameters, we get the following results on "中文糖尿病标注数据集" valid data.
+Using the default parameters, we get the following results on "中文糖尿病标注数据集" and "CoNLL-2003" valid data.
 
-|model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
+|model    | macro-F1| macro-P| macro-R|  lr    |epoch   |maxlen  |batch_size| data|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
-| bert+crf| 0.6288  | 0.6507 | 0.6493 | 0.9835  |1e-5    |    3   |  100   |    16    |
-|   bert  | 0.6308  | 0.6593 | 0.6429 | 0.9846  |1e-5    |    3   |  100   |    16    |
+| bert+crf| -  | - | - | -  |-    |    -   |  -   |    中文糖尿病标注数据集    |
+|   bert  | -  | - | - | -  |-    |    -   |  -   |    中文糖尿病标注数据集    |
+|   bert  | 0.9007  | 0.9067 | 0.9132 | 2e-5  |8    |    128   |  8   |    CoNLL-2003    |
 
 # For Sentence Classfication
 
@@ -170,7 +171,7 @@ Using the default parameters, we get the following results on "新闻标题短�
 
 |model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
-| bert+softmax| 0.7559 | 0.7520 | 0.7949 | 0.8313  |1e-5    |    3   |  50   |    32    |
+| bert+softmax| - | - | - | -  |-    |    -   |  -   |    -    |
 |  TextCNN    | 0.7030 | 0.6927 | 0.7390| 0.7554|  0.0001  |  3   | 50 |   128  |
 # For GCN：
 

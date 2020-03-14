@@ -5,16 +5,15 @@ from fennlp.datas.dataloader import ZHTFWriter, ZHTFLoader
 from fennlp.metrics import Metric
 import numpy as np
 # 载入参数
-load_check = LoadCheckpoint()
+load_check = LoadCheckpoint(langurage='en')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 16
-param["maxlen"] = 100
-param["label_size"] = 46
+param["batch_size"] = 8
+param["maxlen"] = 128
+param["label_size"] = 9
 
 
-# 构建模型
 class BERT_NER(tf.keras.Model):
     def __init__(self, param, **kwargs):
         super(BERT_NER, self).__init__(**kwargs)
@@ -29,14 +28,14 @@ class BERT_NER(tf.keras.Model):
     def call(self, inputs, is_training=True):
         bert = self.bert(inputs, is_training)
         sequence_output = bert.get_sequence_output()  # batch,sequence,768
-        output = self.dense(sequence_output)
-        output = tf.reshape(output, [self.batch_size, self.maxlen, -1])
-        output = tf.math.softmax(output, axis=-1)
+        pre = self.dense(sequence_output)
+        pre = tf.reshape(pre, [self.batch_size, self.maxlen, -1])
+        output = tf.math.softmax(pre, axis=-1)
         return output
 
     def predict(self, inputs, is_training=False):
-        predict = self(inputs, is_training=is_training)
-        return predict
+        output = self(inputs, is_training=is_training)
+        return output
 
 
 model = BERT_NER(param)
@@ -47,21 +46,20 @@ model.summary()
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = ZHTFWriter(param["maxlen"], vocab_file,
-                    modes=["valid"], check_exist=True)
+                    modes=["valid"], check_exist=False)
 
 ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=3)
 
 # Metrics
-f1score = Metric.SparseF1Score("macro")
-precsionscore = Metric.SparsePrecisionScore("macro")
-recallscore = Metric.SparseRecallScore("macro")
+f1score = Metric.SparseF1Score(average="macro")
+precsionscore = Metric.SparsePrecisionScore(average="macro")
+recallscore = Metric.SparseRecallScore(average="macro")
 accuarcyscore = Metric.SparseAccuracy()
 
 # 保存模型
 checkpoint = tf.train.Checkpoint(model=model)
 checkpoint.restore(tf.train.latest_checkpoint('./save'))
 # For test model
-# print(dir(checkpoint))
 Batch = 0
 f1s = []
 precisions = []

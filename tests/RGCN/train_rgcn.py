@@ -1,8 +1,6 @@
 #! encoding="utf-8"
-
 from fennlp.datas.graphloader import RGCNLoader
 from fennlp.models import RGCN
-
 negative_sample = 1
 batch_size = 10
 split_size = 0.5
@@ -21,5 +19,4 @@ model = RGCN.RGCNDistmult(len(entity2id), len(relation2id), num_bases, dropout)
 
 entity_embedding = model(data.entity, data.edge_index, data.edge_type, data.edge_norm)
 
-loss = model.score_loss(entity_embedding, data.samples, data.labels) + reg_ratio * model.reg_loss(
-    entity_embedding)
+loss = model.score_loss(entity_embedding, data.samples, data.labels) + reg_ratio * model.reg_loss( entity_embedding)
