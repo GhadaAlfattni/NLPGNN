@@ -53,7 +53,8 @@ optimizer_bert = optim.Adam(learning_rate=lr)
 # optimizer_bert = tf.keras.optimizers.Adam(1e-5)
 
 # 构建损失函数
-mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False)
+# mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False,use_mask=True)
+sparse_categotical_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
 
 # 初始化参数
 init_weights_from_checkpoint(model,
@@ -87,7 +88,7 @@ Batch = 0
 for X, token_type_id, input_mask, Y in ner_load.load_train():
     with tf.GradientTape() as tape:
         predict = model([X, token_type_id, input_mask])
-        loss = mask_sparse_categotical_loss(Y, predict,use_mask=False)
+        loss = sparse_categotical_loss(Y, predict)
 
         f1 = f1score(Y, predict)
         precision = precsionscore(Y, predict)

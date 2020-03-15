@@ -339,9 +339,9 @@ def crf_forward(inputs, state, transition_params, sequence_lengths):
     inputs = tf.transpose(inputs, [1, 0, 2])
     transition_params = tf.expand_dims(transition_params, 0)
 
-    def _scan_fn(_state, _inputs):
+    def _scan_fn(_state, _inputs):#递归函数
         _state = tf.expand_dims(_state, 2)
-        transition_scores = _state + transition_params
+        transition_scores = _state + transition_params# 初始状态往任意点转移的概率
         new_alphas = _inputs + tf.reduce_logsumexp(transition_scores, [1])
         return new_alphas
 

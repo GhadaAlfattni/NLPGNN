@@ -11,8 +11,8 @@ load_check = LoadCheckpoint()
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 32
-param["maxlen"] = 50
+param["batch_size"] = 2
+param["maxlen"] = 10
 param["label_size"] = 15
 
 
@@ -50,8 +50,8 @@ lr_schedule = tf.keras.optimizers.schedules.PolynomialDecay(2e-5, decay_steps=10
 optimizer_bert = optim.Adam(learning_rate=lr_schedule)
 #
 # # 构建损失函数
-mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False)
-#
+# mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False,use_mask=True)
+mask_sparse_categotical_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
 # # 初始化参数
 init_weights_from_checkpoint(model,
                              model_path,
@@ -85,7 +85,7 @@ for X, token_type_id, input_mask, Y in load.load_train():
 
     with tf.GradientTape() as tape:
         predict = model([X, token_type_id, input_mask])
-        loss = mask_sparse_categotical_loss(Y, predict, use_mask=False)
+        loss = mask_sparse_categotical_loss(Y, predict)
         f1 = f1score(Y, predict)
         precision = precsionscore(Y, predict)
         recall = recallscore(Y, predict)

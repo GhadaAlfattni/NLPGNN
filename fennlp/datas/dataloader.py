@@ -193,7 +193,7 @@ class ZHTFLoader(object):
                 drop_remainder=True))
         dataset = dataset.apply(
             tf.data.experimental.shuffle_and_repeat(
-                10000,
+                1000,
                 self.epoch
             )
         )

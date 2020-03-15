@@ -22,6 +22,7 @@ class CrfLogLikelihood(tf.keras.layers.Layer):
         sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
         sequence_scores = crf_sequence_score(inputs, tag_indices, sequence_lengths,
                                              self.transition_params)
+        # log_sum(exp(一条路劲得分))，对所有路径得分的exp求sum后取log
         log_norm = crf_log_norm(inputs, sequence_lengths, self.transition_params)
         # Normalize the scores to get the log-likelihood per example.
         log_likelihood = sequence_scores - log_norm
@@ -87,9 +88,47 @@ def crf_binary_score(tag_indices, sequence_lengths, transition_params):
     # Get the binary scores based on the flattened representation.
     binary_scores = tf.gather(flattened_transition_params,
                               flattened_transition_indices)
-
     masks = tf.sequence_mask(
         sequence_lengths, maxlen=tf.shape(tag_indices)[1], dtype=tf.float32)
     truncated_masks = tf.slice(masks, [0, 1], [-1, -1])
     binary_scores = tf.reduce_sum(binary_scores * truncated_masks, 1)
     return binary_scores
+
+def crf_log_norm(inputs, sequence_lengths, transition_params):
+
+    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
+    # Split up the first and rest of the inputs in preparation for the forward
+    # algorithm.
+    first_input = tf.slice(inputs, [0, 0, 0], [-1, 1, -1])
+    first_input = tf.squeeze(first_input, [1])
+    """Forward computation of alpha values."""
+    rest_of_input = tf.slice(inputs, [0, 1, 0], [-1, -1, -1])
+    # Compute the alpha values in the forward algorithm in order to get the
+    # partition function.
+
+    alphas = crf_forward(rest_of_input, first_input, transition_params,
+                         sequence_lengths)
+    log_norm = tf.reduce_logsumexp(alphas, [1])
+
+    return log_norm
+
+def crf_forward(inputs, state, transition_params, sequence_lengths):
+    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
+
+    last_index = tf.maximum(
+        tf.constant(0, dtype=sequence_lengths.dtype), sequence_lengths - 1)
+    inputs = tf.transpose(inputs, [1, 0, 2])
+    transition_params = tf.expand_dims(transition_params, 0)
+
+    def _scan_fn(_state, _inputs):#递归函数
+        _state = tf.expand_dims(_state, 2)
+        transition_scores = _state + transition_params# 初始状态往任意点转移的概率
+        new_alphas = _inputs + tf.reduce_logsumexp(transition_scores, [1])
+        return new_alphas
+
+    all_alphas = tf.transpose(tf.scan(_scan_fn, inputs, state), [1, 0, 2])
+    # add first state for sequences of length 1
+    all_alphas = tf.concat([tf.expand_dims(state, 1), all_alphas], 1)
+
+    idxs = tf.stack([tf.range(tf.shape(last_index)[0]), last_index], axis=1)
+    return tf.gather_nd(all_alphas, idxs)

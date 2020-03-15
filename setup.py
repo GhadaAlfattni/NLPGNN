@@ -11,11 +11,12 @@ URL = 'https://github.com/kyzhouhzau/fennlp'
 EMAIL = 'zhoukaiyinhzau@gmail.com'
 AUTHOR = 'Kaiyin Zhou'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.0.2'
+VERSION = '0.0.4'
 
 REQUIRED = [
     'typeguard',
-    'gensim'
+    'gensim',
+    'tqdm'
 ]
 
 # Where the magic happens:
