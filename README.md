@@ -50,6 +50,10 @@ git clone https://github.com/kyzhouhzau/fennlp.git
 ```
 python setup.py install
 ```
+or 
+```
+pip install fennlp
+```
 3. run model
 ```
 python bert_ner_train.py
@@ -148,7 +152,20 @@ bert = bert.BERT()
 ``` 
 python train_bert_classification.py
 ```
+```
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+bert (BERT)                  multiple                  102267648 
+_________________________________________________________________
+dense (Dense)                multiple                  11535     
+=================================================================
+Total params: 102,279,183
+Trainable params: 102,279,183
+Non-trainable params: 0
+_________________________________________________________________
 
+```
 
 
 ### 2、TextCNN
