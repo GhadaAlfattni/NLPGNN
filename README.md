@@ -35,7 +35,7 @@ Use BERT as tensorflow2.0's layer, See tests dictionary for more details。
 
 
 # Requirement
-* tensorflow>=2.0 (conda install cudatoolkit and conda install cudnn)
+* tensorflow-gpu>=2.0
 * typeguard
 * gensim
 * tqdm
@@ -124,7 +124,7 @@ Using the default parameters, we get the following results on "中文糖尿病�
 |model    | macro-F1| macro-P| macro-R|  lr    |epoch   |maxlen  |batch_size| data|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
 | bert+crf| -  | - | - | -  |-    |    -   |  -   |    中文糖尿病标注数据集    |
-|   bert  | 0.6344  | 0.6549 | 0.6522 | 2e-5  |8    |   100   | 16   |  中文糖尿病标注数据集|
+|   bert  |  -  | - | - | -  |-    |    -   |  -   |    中文糖尿病标注数据集    |
 |   bert  | 0.9007  | 0.9067 | 0.9132 | 2e-5  |8    |   128   |  8   |    CoNLL-2003    |
 
 # For Sentence Classfication

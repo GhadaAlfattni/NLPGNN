@@ -1,163 +1,22 @@
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import numpy as np
+#! usr/bin/env python3
+# -*- coding:utf-8 -*-
+"""
+@Author:Kaiyin Zhou
+"""
 import tensorflow as tf
 
+"""
+序列生成概率记作P(y_1,y_2...,y_n|x_1,x_2,...x_n) = exp(F(y_1,y_2,...y_n|x_1,x_2,...x_n))/Z(X)
 
-# TODO: Wrap functions in @tf.function once
-# https://github.com/tensorflow/tensorflow/issues/29075 is resolved
+取负对数：
+-log(P(y_1,y_2...,y_n|x_1,x_2,...x_n))
+=-(\sum_{k=0}^{n-1}h(y_{k+1};X) +\sum_{k=1}^{n-1}g(y_k,y_{k+1}))+log(Z(X))
 
+其中函数h是序列每一个t时刻的预测得分，函数g是当前t时刻标签下一个预测为y_{k+1}的概率，两者共同构成
+"crf_sequence_score"得分。
 
-def crf_sequence_score(inputs, tag_indices, sequence_lengths,
-                       transition_params):
-    """Computes the unnormalized score for a tag sequence.
-    Args:
-      inputs: A [batch_size, max_seq_len, num_tags] tensor of unary potentials
-          to use as input to the CRF layer.
-      tag_indices: A [batch_size, max_seq_len] matrix of tag indices for which
-          we compute the unnormalized score.
-      sequence_lengths: A [batch_size] vector of true sequence lengths.
-      transition_params: A [num_tags, num_tags] transition matrix.
-    Returns:
-      sequence_scores: A [batch_size] vector of unnormalized sequence scores.
-    """
-    tag_indices = tf.cast(tag_indices, dtype=tf.int32)
-    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
-
-    # If max_seq_len is 1, we skip the score calculation and simply gather the
-    # unary potentials of the single tag.
-    def _single_seq_fn():
-        batch_size = tf.shape(inputs, out_type=tf.int32)[0]
-        batch_inds = tf.reshape(tf.range(batch_size), [-1, 1])
-        indices = tf.concat([batch_inds, tf.zeros_like(batch_inds)], axis=1)
-
-        tag_inds = tf.gather_nd(tag_indices, indices)
-        tag_inds = tf.reshape(tag_inds, [-1, 1])
-        indices = tf.concat([indices, tag_inds], axis=1)
-
-        sequence_scores = tf.gather_nd(inputs, indices)
-
-        sequence_scores = tf.where(
-            tf.less_equal(sequence_lengths, 0), tf.zeros_like(sequence_scores),
-            sequence_scores)
-        return sequence_scores
-
-    def _multi_seq_fn():
-        # Compute the scores of the given tag sequence.
-        unary_scores = crf_unary_score(tag_indices, sequence_lengths, inputs)
-        binary_scores = crf_binary_score(tag_indices, sequence_lengths,
-                                         transition_params)
-        sequence_scores = unary_scores + binary_scores
-        return sequence_scores
-
-    return tf.cond(
-        tf.equal(tf.shape(inputs)[1], 1), _single_seq_fn, _multi_seq_fn)
-
-
-def crf_multitag_sequence_score(inputs, tag_bitmap, sequence_lengths,
-                                transition_params):
-    """Computes the unnormalized score of all tag sequences matching
-    tag_bitmap.
-    tag_bitmap enables more than one tag to be considered correct at each time
-    step. This is useful when an observed output at a given time step is
-    consistent with more than one tag, and thus the log likelihood of that
-    observation must take into account all possible consistent tags.
-    Using one-hot vectors in tag_bitmap gives results identical to
-    crf_sequence_score.
-    Args:
-      inputs: A [batch_size, max_seq_len, num_tags] tensor of unary potentials
-          to use as input to the CRF layer.
-      tag_bitmap: A [batch_size, max_seq_len, num_tags] boolean tensor
-          representing all active tags at each index for which to calculate the
-          unnormalized score.
-      sequence_lengths: A [batch_size] vector of true sequence lengths.
-      transition_params: A [num_tags, num_tags] transition matrix.
-    Returns:
-      sequence_scores: A [batch_size] vector of unnormalized sequence scores.
-    """
-    tag_bitmap = tf.cast(tag_bitmap, dtype=tf.bool)
-    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
-    filtered_inputs = tf.where(tag_bitmap, inputs,
-                               tf.fill(tf.shape(inputs), float("-inf")))
-
-    # If max_seq_len is 1, we skip the score calculation and simply gather the
-    # unary potentials of all active tags.
-    def _single_seq_fn():
-        return tf.reduce_logsumexp(
-            filtered_inputs, axis=[1, 2], keepdims=False)
-
-    def _multi_seq_fn():
-        # Compute the logsumexp of all scores of sequences
-        # matching the given tags.
-        return crf_log_norm(
-            inputs=filtered_inputs,
-            sequence_lengths=sequence_lengths,
-            transition_params=transition_params)
-
-    return tf.cond(
-        tf.equal(tf.shape(inputs)[1], 1), _single_seq_fn, _multi_seq_fn)
-
-
-def crf_log_norm(inputs, sequence_lengths, transition_params):
-    """Computes the normalization for a CRF.
-    Args:
-      inputs: A [batch_size, max_seq_len, num_tags] tensor of unary potentials
-          to use as input to the CRF layer.
-      sequence_lengths: A [batch_size] vector of true sequence lengths.
-      transition_params: A [num_tags, num_tags] transition matrix.
-    Returns:
-      log_norm: A [batch_size] vector of normalizers for a CRF.
-    """
-    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
-    # Split up the first and rest of the inputs in preparation for the forward
-    # algorithm.
-    first_input = tf.slice(inputs, [0, 0, 0], [-1, 1, -1])
-    first_input = tf.squeeze(first_input, [1])
-
-    # If max_seq_len is 1, we skip the algorithm and simply reduce_logsumexp
-    # over the "initial state" (the unary potentials).
-    def _single_seq_fn():
-        log_norm = tf.reduce_logsumexp(first_input, [1])
-        # Mask `log_norm` of the sequences with length <= zero.
-        log_norm = tf.where(
-            tf.less_equal(sequence_lengths, 0), tf.zeros_like(log_norm),
-            log_norm)
-        return log_norm
-
-    def _multi_seq_fn():
-        """Forward computation of alpha values."""
-        rest_of_input = tf.slice(inputs, [0, 1, 0], [-1, -1, -1])
-        # Compute the alpha values in the forward algorithm in order to get the
-        # partition function.
-
-        alphas = crf_forward(rest_of_input, first_input, transition_params,
-                             sequence_lengths)
-        log_norm = tf.reduce_logsumexp(alphas, [1])
-        # Mask `log_norm` of the sequences with length <= zero.
-        log_norm = tf.where(
-            tf.less_equal(sequence_lengths, 0), tf.zeros_like(log_norm),
-            log_norm)
-        return log_norm
-
-    return tf.cond(
-        tf.equal(tf.shape(inputs)[1], 1), _single_seq_fn, _multi_seq_fn)
+Z(X)是所有可能的路径的得分实际上log(Z(X))=\log(\sum \exp a_i), a_i表示第i条可能的路径。
+"""
 
 
 class CrfLogLikelihood(tf.keras.layers.Layer):
@@ -178,81 +37,53 @@ class CrfLogLikelihood(tf.keras.layers.Layer):
         sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
         sequence_scores = crf_sequence_score(inputs, tag_indices, sequence_lengths,
                                              self.transition_params)
+        # log_sum(exp(所有可能的路径得分))，对所有路径得分的exp求sum后取log
         log_norm = crf_log_norm(inputs, sequence_lengths, self.transition_params)
         # Normalize the scores to get the log-likelihood per example.
         log_likelihood = sequence_scores - log_norm
         return log_likelihood, self.transition_params
 
-    def crf_decode(self, potentials, transition_params, sequence_length):
-        """Decode the highest scoring sequence of tags.
-        Args:
-          potentials: A [batch_size, max_seq_len, num_tags] tensor of
-                    unary potentials.
-          transition_params: A [num_tags, num_tags] matrix of
-                    binary potentials.
-          sequence_length: A [batch_size] vector of true sequence lengths.
-        Returns:
-          decode_tags: A [batch_size, max_seq_len] matrix, with dtype `tf.int32`.
-                      Contains the highest scoring tag indices.
-          best_score: A [batch_size] vector, containing the score of `decode_tags`.
-        """
+    def crf_decode(selfself, potentials, transition_params, sequence_length):
         sequence_length = tf.cast(sequence_length, dtype=tf.int32)
+        initial_state = tf.slice(potentials, [0, 0, 0], [-1, 1, -1])
+        initial_state = tf.squeeze(initial_state, axis=[1])
+        inputs = tf.slice(potentials, [0, 1, 0], [-1, -1, -1])
 
-        # If max_seq_len is 1, we skip the algorithm and simply return the
-        # argmax tag and the max activation.
-        def _single_seq_fn():
-            decode_tags = tf.cast(tf.argmax(potentials, axis=2), dtype=tf.int32)
-            best_score = tf.reshape(tf.reduce_max(potentials, axis=2), shape=[-1])
-            return decode_tags, best_score
+        sequence_length_less_one = tf.maximum(
+            tf.constant(0, dtype=tf.int32), sequence_length - 1)
 
-        def _multi_seq_fn():
-            # Computes forward decoding. Get last score and backpointers.
-            initial_state = tf.slice(potentials, [0, 0, 0], [-1, 1, -1])
-            initial_state = tf.squeeze(initial_state, axis=[1])
-            inputs = tf.slice(potentials, [0, 1, 0], [-1, -1, -1])
+        backpointers, last_score = crf_decode_forward(
+            inputs, initial_state, transition_params, sequence_length_less_one)
 
-            sequence_length_less_one = tf.maximum(
-                tf.constant(0, dtype=tf.int32), sequence_length - 1)
+        backpointers = tf.reverse_sequence(
+            backpointers, sequence_length_less_one, seq_axis=1)
 
-            backpointers, last_score = crf_decode_forward(
-                inputs, initial_state, transition_params, sequence_length_less_one)
+        initial_state = tf.cast(tf.argmax(last_score, axis=1), dtype=tf.int32)
+        initial_state = tf.expand_dims(initial_state, axis=-1)
 
-            backpointers = tf.reverse_sequence(
-                backpointers, sequence_length_less_one, seq_axis=1)
+        decode_tags = crf_decode_backward(backpointers, initial_state)
+        decode_tags = tf.squeeze(decode_tags, axis=[2])
+        decode_tags = tf.concat([initial_state, decode_tags], axis=1)
+        decode_tags = tf.reverse_sequence(
+            decode_tags, sequence_length, seq_axis=1)
 
-            initial_state = tf.cast(tf.argmax(last_score, axis=1), dtype=tf.int32)
-            initial_state = tf.expand_dims(initial_state, axis=-1)
+        best_score = tf.reduce_max(last_score, axis=1)
+        return decode_tags, best_score
 
-            decode_tags = crf_decode_backward(backpointers, initial_state)
-            decode_tags = tf.squeeze(decode_tags, axis=[2])
-            decode_tags = tf.concat([initial_state, decode_tags], axis=1)
-            decode_tags = tf.reverse_sequence(
-                decode_tags, sequence_length, seq_axis=1)
 
-            best_score = tf.reduce_max(last_score, axis=1)
-            return decode_tags, best_score
+def crf_sequence_score(inputs, tag_indices, sequence_lengths,
+                       transition_params):
+    tag_indices = tf.cast(tag_indices, dtype=tf.int32)
+    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
+    unary_scores = crf_unary_score(tag_indices, sequence_lengths, inputs)
+    # trans score
+    binary_scores = crf_binary_score(tag_indices, sequence_lengths,
+                                     transition_params)
+    sequence_scores = unary_scores + binary_scores
+    return sequence_scores
 
-        if potentials.shape[1] is not None:
-            # shape is statically know, so we just execute
-            # the appropriate code path
-            if potentials.shape[1] == 1:
-                return _single_seq_fn()
-            else:
-                return _multi_seq_fn()
-        else:
-            return tf.cond(
-                tf.equal(tf.shape(potentials)[1], 1), _single_seq_fn,
-                _multi_seq_fn)
 
 def crf_unary_score(tag_indices, sequence_lengths, inputs):
-    """Computes the unary scores of tag sequences.
-    Args:
-      tag_indices: A [batch_size, max_seq_len] matrix of tag indices.
-      sequence_lengths: A [batch_size] vector of true sequence lengths.
-      inputs: A [batch_size, max_seq_len, num_tags] tensor of unary potentials.
-    Returns:
-      unary_scores: A [batch_size] vector of unary scores.
-    """
     tag_indices = tf.cast(tag_indices, dtype=tf.int32)
     sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
 
@@ -262,33 +93,25 @@ def crf_unary_score(tag_indices, sequence_lengths, inputs):
 
     flattened_inputs = tf.reshape(inputs, [-1])
 
-    offsets = tf.expand_dims(tf.range(batch_size) * max_seq_len * num_tags, 1)#计算每一个batch起始位置
-    offsets += tf.expand_dims(tf.range(max_seq_len) * num_tags, 0)#计算每一个step的预测结果的起始位置
+    offsets = tf.expand_dims(tf.range(batch_size) * max_seq_len * num_tags, 1)  # 计算每一个batch起始位置
+    offsets += tf.expand_dims(tf.range(max_seq_len) * num_tags, 0)  # 计算每一个step的预测结果的起始位置
     # Use int32 or int64 based on tag_indices' dtype.
     if tag_indices.dtype == tf.int64:
         offsets = tf.cast(offsets, tf.int64)
-    flattened_tag_indices = tf.reshape(offsets + tag_indices, [-1])# 这就获得每一个标签所在的index
+    flattened_tag_indices = tf.reshape(offsets + tag_indices, [-1])  # 这就获得每一个标签所在的index
 
     unary_scores = tf.reshape(
         tf.gather(flattened_inputs, flattened_tag_indices),
-        [batch_size, max_seq_len])# 将每一个标签所在的index取出来，获得模型预测得分
+        [batch_size, max_seq_len])  # 将每一个标签所在的index取出来，获得模型预测得分
 
     masks = tf.sequence_mask(
         sequence_lengths, maxlen=tf.shape(tag_indices)[1], dtype=tf.float32)
 
     unary_scores = tf.reduce_sum(unary_scores * masks, 1)
-    return unary_scores# 获得模型预测得分
+    return unary_scores  # 获得模型预测得分
 
 
 def crf_binary_score(tag_indices, sequence_lengths, transition_params):
-    """Computes the binary scores of tag sequences.
-    Args:
-      tag_indices: A [batch_size, max_seq_len] matrix of tag indices.
-      sequence_lengths: A [batch_size] vector of true sequence lengths.
-      transition_params: A [num_tags, num_tags] matrix of binary potentials.
-    Returns:
-      binary_scores: A [batch_size] vector of binary scores.
-    """
     tag_indices = tf.cast(tag_indices, dtype=tf.int32)
     sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
 
@@ -309,7 +132,6 @@ def crf_binary_score(tag_indices, sequence_lengths, transition_params):
     # Get the binary scores based on the flattened representation.
     binary_scores = tf.gather(flattened_transition_params,
                               flattened_transition_indices)
-
     masks = tf.sequence_mask(
         sequence_lengths, maxlen=tf.shape(tag_indices)[1], dtype=tf.float32)
     truncated_masks = tf.slice(masks, [0, 1], [-1, -1])
@@ -317,21 +139,25 @@ def crf_binary_score(tag_indices, sequence_lengths, transition_params):
     return binary_scores
 
 
+def crf_log_norm(inputs, sequence_lengths, transition_params):
+    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
+    # Split up the first and rest of the inputs in preparation for the forward
+    # algorithm.
+    first_input = tf.slice(inputs, [0, 0, 0], [-1, 1, -1])
+    first_input = tf.squeeze(first_input, [1])
+    """Forward computation of alpha values."""
+    rest_of_input = tf.slice(inputs, [0, 1, 0], [-1, -1, -1])
+    # Compute the alpha values in the forward algorithm in order to get the
+    # partition function.
+
+    alphas = crf_forward(rest_of_input, first_input, transition_params,
+                         sequence_lengths)
+    log_norm = tf.reduce_logsumexp(alphas, [1])
+
+    return log_norm
+
+
 def crf_forward(inputs, state, transition_params, sequence_lengths):
-    """Computes the alpha values in a linear-chain CRF.
-    See http://www.cs.columbia.edu/~mcollins/fb.pdf for reference.
-    Args:
-      inputs: A [batch_size, num_tags] matrix of unary potentials.
-      state: A [batch_size, num_tags] matrix containing the previous alpha
-         values.
-      transition_params: A [num_tags, num_tags] matrix of binary potentials.
-          This matrix is expanded into a [1, num_tags, num_tags] in preparation
-          for the broadcast summation occurring within the cell.
-      sequence_lengths: A [batch_size] vector of true sequence lengths.
-    Returns:
-      new_alphas: A [batch_size, num_tags] matrix containing the
-          new alpha values.
-    """
     sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
 
     last_index = tf.maximum(
@@ -339,9 +165,12 @@ def crf_forward(inputs, state, transition_params, sequence_lengths):
     inputs = tf.transpose(inputs, [1, 0, 2])
     transition_params = tf.expand_dims(transition_params, 0)
 
-    def _scan_fn(_state, _inputs):#递归函数
+    def _scan_fn(_state, _inputs):  # 递归函数
         _state = tf.expand_dims(_state, 2)
-        transition_scores = _state + transition_params# 初始状态往任意点转移的概率
+        # 初始状态往任意点转移的概率,其中每一个初始状态可以向N个其他状态转移。、
+        # 对于t时刻每一个特定的batch中向量中的每一个可能的点下一时刻都有N种可能的转移结果
+        # 这里通过[B,N,1]+[1,N,N]的相加实现
+        transition_scores = _state + transition_params
         new_alphas = _inputs + tf.reduce_logsumexp(transition_scores, [1])
         return new_alphas
 
@@ -353,33 +182,13 @@ def crf_forward(inputs, state, transition_params, sequence_lengths):
     return tf.gather_nd(all_alphas, idxs)
 
 
-def viterbi_decode(score, transition_params):
-    """Decode the highest scoring sequence of tags outside of TensorFlow.
-    This should only be used at test time.
-    Args:
-      score: A [seq_len, num_tags] matrix of unary potentials.
-      transition_params: A [num_tags, num_tags] matrix of binary potentials.
-    Returns:
-      viterbi: A [seq_len] list of integers containing the highest scoring tag
-          indices.
-      viterbi_score: A float containing the score for the Viterbi sequence.
-    """
-    trellis = np.zeros_like(score)
-    backpointers = np.zeros_like(score, dtype=np.int32)
-    trellis[0] = score[0]
-
-    for t in range(1, score.shape[0]):
-        v = np.expand_dims(trellis[t - 1], 1) + transition_params
-        trellis[t] = score[t] + np.max(v, 0)
-        backpointers[t] = np.argmax(v, 0)
-
-    viterbi = [np.argmax(trellis[-1])]
-    for bp in reversed(backpointers[1:]):
-        viterbi.append(bp[viterbi[-1]])
-    viterbi.reverse()
-
-    viterbi_score = np.max(trellis[-1])
-    return viterbi, viterbi_score
+def crf_decode_forward(inputs, state, transition_params, sequence_lengths):
+    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
+    mask = tf.sequence_mask(sequence_lengths, tf.shape(inputs)[1])
+    crf_fwd_cell = CrfDecodeForwardRnnCell(transition_params)
+    crf_fwd_layer = tf.keras.layers.RNN(
+        crf_fwd_cell, return_sequences=True, return_state=True)
+    return crf_fwd_layer(inputs, state, mask=mask)
 
 
 class CrfDecodeForwardRnnCell(tf.keras.layers.AbstractRNNCell):
@@ -426,26 +235,6 @@ class CrfDecodeForwardRnnCell(tf.keras.layers.AbstractRNNCell):
         return backpointers, new_state
 
 
-def crf_decode_forward(inputs, state, transition_params, sequence_lengths):
-    """Computes forward decoding in a linear-chain CRF.
-    Args:
-      inputs: A [batch_size, num_tags] matrix of unary potentials.
-      state: A [batch_size, num_tags] matrix containing the previous step's
-            score values.
-      transition_params: A [num_tags, num_tags] matrix of binary potentials.
-      sequence_lengths: A [batch_size] vector of true sequence lengths.
-    Returns:
-      backpointers: A [batch_size, num_tags] matrix of backpointers.
-      new_state: A [batch_size, num_tags] matrix of new score values.
-    """
-    sequence_lengths = tf.cast(sequence_lengths, dtype=tf.int32)
-    mask = tf.sequence_mask(sequence_lengths, tf.shape(inputs)[1])
-    crf_fwd_cell = CrfDecodeForwardRnnCell(transition_params)
-    crf_fwd_layer = tf.keras.layers.RNN(
-        crf_fwd_cell, return_sequences=True, return_state=True)
-    return crf_fwd_layer(inputs, state, mask=mask)
-
-
 def crf_decode_backward(inputs, state):
     """Computes backward decoding in a linear-chain CRF.
     Args:
@@ -465,65 +254,3 @@ def crf_decode_backward(inputs, state):
         return new_tags
 
     return tf.transpose(tf.scan(_scan_fn, inputs, state), [1, 0, 2])
-
-
-def crf_decode(potentials, transition_params, sequence_length):
-    """Decode the highest scoring sequence of tags.
-    Args:
-      potentials: A [batch_size, max_seq_len, num_tags] tensor of
-                unary potentials.
-      transition_params: A [num_tags, num_tags] matrix of
-                binary potentials.
-      sequence_length: A [batch_size] vector of true sequence lengths.
-    Returns:
-      decode_tags: A [batch_size, max_seq_len] matrix, with dtype `tf.int32`.
-                  Contains the highest scoring tag indices.
-      best_score: A [batch_size] vector, containing the score of `decode_tags`.
-    """
-    sequence_length = tf.cast(sequence_length, dtype=tf.int32)
-
-    # If max_seq_len is 1, we skip the algorithm and simply return the
-    # argmax tag and the max activation.
-    def _single_seq_fn():
-        decode_tags = tf.cast(tf.argmax(potentials, axis=2), dtype=tf.int32)
-        best_score = tf.reshape(tf.reduce_max(potentials, axis=2), shape=[-1])
-        return decode_tags, best_score
-
-    def _multi_seq_fn():
-        # Computes forward decoding. Get last score and backpointers.
-        initial_state = tf.slice(potentials, [0, 0, 0], [-1, 1, -1])
-        initial_state = tf.squeeze(initial_state, axis=[1])
-        inputs = tf.slice(potentials, [0, 1, 0], [-1, -1, -1])
-
-        sequence_length_less_one = tf.maximum(
-            tf.constant(0, dtype=tf.int32), sequence_length - 1)
-
-        backpointers, last_score = crf_decode_forward(
-            inputs, initial_state, transition_params, sequence_length_less_one)
-
-        backpointers = tf.reverse_sequence(
-            backpointers, sequence_length_less_one, seq_axis=1)
-
-        initial_state = tf.cast(tf.argmax(last_score, axis=1), dtype=tf.int32)
-        initial_state = tf.expand_dims(initial_state, axis=-1)
-
-        decode_tags = crf_decode_backward(backpointers, initial_state)
-        decode_tags = tf.squeeze(decode_tags, axis=[2])
-        decode_tags = tf.concat([initial_state, decode_tags], axis=1)
-        decode_tags = tf.reverse_sequence(
-            decode_tags, sequence_length, seq_axis=1)
-
-        best_score = tf.reduce_max(last_score, axis=1)
-        return decode_tags, best_score
-
-    if potentials.shape[1] is not None:
-        # shape is statically know, so we just execute
-        # the appropriate code path
-        if potentials.shape[1] == 1:
-            return _single_seq_fn()
-        else:
-            return _multi_seq_fn()
-    else:
-        return tf.cond(
-            tf.equal(tf.shape(potentials)[1], 1), _single_seq_fn,
-            _multi_seq_fn)
