@@ -8,7 +8,6 @@ from fennlp.tools import get_activation, get_shape_list, create_attention_mask_f
 from fennlp.layers.embedding import WDEmbedding, SegPosEmbedding
 from fennlp.layers.transformer import Transformer
 
-
 class BERT(tf.keras.layers.Layer):
     def __init__(self,
                  param=None,
