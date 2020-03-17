@@ -8,7 +8,7 @@ import pickle
 
 
 class ZHTFWriter(object):
-    def __init__(self, maxlen, vocab_files, modes, task="NER", do_low_case=True,
+    def __init__(self, maxlen, vocab_files, modes, task="NER", do_low_case=False,
                  check_exist=False):
         self.maxlen = maxlen
         self.fulltoknizer = tokenization.FullTokenizer(
@@ -105,13 +105,13 @@ class ZHTFWriter(object):
         segment_ids = [0]
         input_mask = [1]
         sentences, label = example
-        sentences = [self.fulltoknizer.tokenize(w) for w in sentences.split()]
-        for i, words in enumerate(sentences):
-            for word in words:
-                if len(tokens) < maxlen - 1:
-                    tokens.append(word)
-                    segment_ids.append(0)
-                    input_mask.append(1)
+        sentences = self.fulltoknizer.tokenize(sentences)
+
+        for i, word in enumerate(sentences):
+            if len(tokens) < maxlen - 1:
+                tokens.append(word)
+                segment_ids.append(0)
+                input_mask.append(1)
         tokens.append("[SEP]")
         segment_ids.append(0)
         input_mask.append(1)
@@ -121,7 +121,6 @@ class ZHTFWriter(object):
             input_mask.append(0)
             segment_ids.append(0)
         return input_ids, segment_ids, input_mask, [int(label)]
-
 
     def _write_examples(self, examples, task="ner"):
         writer = tf.io.TFRecordWriter(os.path.join("Input", self.mode + ".tfrecords"))
@@ -151,17 +150,31 @@ class ZHTFWriter(object):
             output.append(id2label[item])
         return output
 
+    def get_init_weight(self, word2vec, vocab_size, embedding_size):
+        init_weights = np.zeros([vocab_size, embedding_size])
+        with codecs.open(word2vec,encoding='utf-8') as rf:
+            line = rf.readline()
+            embed = line.strip().split()[-1]
+            # if embedding_size != embed:
+            #     raise ValueError("embedding_size must equal word2vec size!")
+            for line in rf:
+                lines = line.strip().split()
+                word_index = self.fulltoknizer.convert_tokens_to_ids([lines[0]])
+                embedding = lines[1:]
+                init_weights[word_index[0]] = embedding
+        return list(init_weights)
+
 
 class ZHTFLoader(object):
-    def __init__(self, maxlen, batch_size, task="ner",epoch=None):
+    def __init__(self, maxlen, batch_size, task="ner", epoch=None):
         self.maxlen = maxlen
         self.batch_size = batch_size
         self.epoch = epoch
-        self.task=task
+        self.task = task
 
     def decode_record(self, record):
         # 告诉解码器每一个feature的类型
-        if self.task.lower()=='ner':
+        if self.task.lower() == 'ner':
 
             feature_description = {
                 "input_ids": tf.io.FixedLenFeature([self.maxlen], tf.int64),
@@ -171,7 +184,7 @@ class ZHTFLoader(object):
 
             }
 
-        elif self.task.lower()=="cls":
+        elif self.task.lower() == "cls":
             feature_description = {
                 "input_ids": tf.io.FixedLenFeature([self.maxlen], tf.int64),
                 "label_id": tf.io.FixedLenFeature([], tf.int64),
@@ -186,25 +199,21 @@ class ZHTFLoader(object):
     def load_train(self):
         self.filename = os.path.join("Input", "train.tfrecords")
         raw_dataset = tf.data.TFRecordDataset(self.filename)
-        dataset = raw_dataset.apply(
-            tf.data.experimental.map_and_batch(
-                lambda record: self.decode_record(record),
-                batch_size=self.batch_size,
-                drop_remainder=True))
-        dataset = dataset.apply(
-            tf.data.experimental.shuffle_and_repeat(
-                1000,
-                self.epoch
-            )
-        )
+        dataset = raw_dataset.map(map_func=lambda record: self.decode_record(record))
+        dataset = dataset.batch(batch_size=self.batch_size,
+                                drop_remainder=True)
+        dataset = dataset.shuffle(1000)
+        dataset = dataset.repeat(self.epoch)
         return dataset
 
     def load_valid(self):
         self.filename = os.path.join("Input", "valid.tfrecords")
         raw_dataset = tf.data.TFRecordDataset(self.filename)
-        dataset = raw_dataset.apply(
-            tf.data.experimental.map_and_batch(
-                lambda record: self.decode_record(record),
+        dataset = raw_dataset.map(
+            lambda record: self.decode_record(record)
+        )
+        dataset = dataset.batch(
                 batch_size=self.batch_size,
-                drop_remainder=True))
+                drop_remainder=True)
+
         return dataset

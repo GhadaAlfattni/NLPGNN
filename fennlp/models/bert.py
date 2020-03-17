@@ -12,7 +12,6 @@ from fennlp.layers.transformer import Transformer
 class BERT(tf.keras.layers.Layer):
     def __init__(self,
                  param=None,
-                 use_crf=False,
                  batch_size=2,
                  maxlen=128,
                  vocab_size=21128,
@@ -31,20 +30,19 @@ class BERT(tf.keras.layers.Layer):
                  name=None,
                  **kwargs):
         super(BERT, self).__init__(name=name, **kwargs)
-        self.maxlen = param.get("maxlen")
-        self.intermediate_size = param.get("intermediate_size")
-        self.vocab_size = param.get("vocab_size")
-        self.batch_size = param.get("batch_size")
-        self.hidden_size = param.get("hidden_size")
-        self.hidden_act = param.get("hidden_act")
-        self.initializer_range = param.get("initializer_range")
-        self.hidden_dropout_prob = param.get("hidden_dropout_prob")
-        self.type_vocab_size = param.get("type_vocab_size")
-        self.num_attention_heads = param.get("num_attention_heads")
-        self.max_position_embeddings = param.get("max_position_embeddings")
-        self.attention_probs_dropout_prob = param.get("attention_probs_dropout_prob")
-        self.num_hidden_layers = param.get("num_hidden_layers")
-        self.use_crf=use_crf
+        self.maxlen = param.get("maxlen", maxlen)
+        self.intermediate_size = param.get("intermediate_size", intermediate_size)
+        self.vocab_size = param.get("vocab_size", vocab_size)
+        self.batch_size = param.get("batch_size", batch_size)
+        self.hidden_size = param.get("hidden_size", hidden_size)
+        self.hidden_act = param.get("hidden_act", hidden_act)
+        self.initializer_range = param.get("initializer_range", initializer_range)
+        self.hidden_dropout_prob = param.get("hidden_dropout_prob", hidden_dropout_prob)
+        self.type_vocab_size = param.get("type_vocab_size", type_vocab_size)
+        self.num_attention_heads = param.get("num_attention_heads", num_attention_heads)
+        self.max_position_embeddings = param.get("max_position_embeddings", max_position_embeddings)
+        self.attention_probs_dropout_prob = param.get("attention_probs_dropout_prob", attention_probs_dropout_prob)
+        self.num_hidden_layers = param.get("num_hidden_layers", num_hidden_layers)
 
         self.use_one_hot_embeddings = use_one_hot_embeddings
         self.do_return_all_layers = do_return_all_layers
@@ -92,10 +90,10 @@ class BERT(tf.keras.layers.Layer):
         self.built = True
 
     def call(self, inputs, is_training=True):
-        input_ids, token_type_ids , input_mask = tf.split(inputs,3,0)
-        input_ids = tf.cast(tf.squeeze(input_ids,axis=0), tf.int64)
-        token_type_ids = tf.cast(tf.squeeze(token_type_ids,axis=0), tf.int64)
-        input_mask = tf.cast(tf.squeeze(input_mask,axis=0), tf.int64)
+        input_ids, token_type_ids, input_mask = tf.split(inputs, 3, 0)
+        input_ids = tf.cast(tf.squeeze(input_ids, axis=0), tf.int64)
+        token_type_ids = tf.cast(tf.squeeze(token_type_ids, axis=0), tf.int64)
+        input_mask = tf.cast(tf.squeeze(input_mask, axis=0), tf.int64)
         input_shape = get_shape_list(input_ids)
         batch_size = input_shape[0]
         seq_length = input_shape[1]

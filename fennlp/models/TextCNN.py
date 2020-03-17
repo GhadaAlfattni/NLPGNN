@@ -4,6 +4,7 @@
 @Author:zhoukaiyin
 """
 import tensorflow as tf
+import numpy as np
 
 
 class TextCNN(tf.keras.Model):
@@ -12,21 +13,30 @@ class TextCNN(tf.keras.Model):
                  vocab_size,
                  embedding_dims,
                  class_num=2,
+                 weights=None,
+                 weights_trainable=True,
                  kernel_sizes=[2, 3, 4],
                  filter_size=[128, 128, 128],
                  name=None,
                  **kwargs):
         super(TextCNN, self).__init__(name=name, **kwargs)
         self.maxlen = maxlen
+
         self.kernel_sizes = kernel_sizes
         # "mask_zero: 是否把 0 看作为一个应该被遮蔽的特殊的 "padding" 值。
         # 这对于可变长的 循环神经网络层 十分有用。 如果设定为 True，
         # 那么接下来的所有层都必须支持 masking，否则就会抛出异常。
         # 如果 mask_zero 为 True，作为结果，索引 0 就不能被用于词汇表中
         # （input_dim 应该与 vocabulary + 1 大小相同）。"
-        self.embedding = tf.keras.layers.Embedding(vocab_size + 1, embedding_dims,
-                                                   input_length=maxlen,
-                                                   mask_zero=True)
+        if weights != None:
+            weights = np.array(weights)
+            self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dims,
+                                                       input_length=maxlen, weights=[weights],
+                                                       trainable=weights_trainable)
+        else:
+            self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dims,
+                                                       input_length=maxlen)
+
         self.convs = []
         self.max_poolings = []
         for i, k in enumerate(kernel_sizes):

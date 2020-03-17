@@ -62,7 +62,7 @@ class LoadCheckpoint(object):
     def load_bert_param(self, pretraining=False):
         filename = self.url.split('/')[-1]
         config = "{}/{}".format(filename.split('.')[0], "bert_config.json")
-        vocab_file = "{}/{}".format(filename.split('.')[0], "vocab.txt")
+        vocab_file = "{}/{}".format(filename.split('.')[0], "zh_vocab.txt")
         model_path = "{}/{}".format(filename.split('.')[0], "bert_model.ckpt")
         bert_param = json.load(open(config, 'r'))
         if not pretraining and self.lg == 'zh':

@@ -23,6 +23,10 @@ Use BERT as tensorflow2.0's layer, See tests dictionary for more details。
 
 
 # Status
+2020/3/16: add model for training sub word embedding based on bpe methods.
+The trained embedding is used in TextCNN model for improve it's improvement.
+See "tran_bpe_embeding.py" for more details.
+
 2020/3/8: add test example "run_tucker.py" for train TuckER on WN18.
 
 2020/3/3: add test example "tran_text_cnn.py" for train TextCNN model. 
@@ -127,9 +131,9 @@ Using the default parameters, we get the following results on "中文糖尿病�
 
 |model    | macro-F1| macro-P| macro-R|  lr    |epoch   |maxlen  |batch_size| data|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
-| bert+crf| -  | - | - | -  |-    |    -   |  -   |    中文糖尿病标注数据集    |
-|   bert  |  -  | - | - | -  |-    |    -   |  -   |    中文糖尿病标注数据集    |
-|   bert  | 0.9007  | 0.9067 | 0.9132 | 2e-5  |8    |   128   |  8   |    CoNLL-2003    |
+| bert+crf| -       | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
+|   bert  |  -      | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
+|   bert  | 0.9007  | 0.9067 | 0.9132 | 2e-5    |8       |   128  |  8   |    CoNLL-2003    |
 
 # For Sentence Classfication
 
@@ -180,17 +184,19 @@ python train_text_cnn.py
 ```
 
 ```
-TODO: use "WordPiece embedding" to Initialize word embedding.
+Use "WordPiece embedding" to Initialize word embedding. Train your embeddings.
+python train_bpe_embedding.py
 ```
 For more detail reference [WordPiece](https://mp.weixin.qq.com/s/Il8sh66TUCEPskbypDZLAg) 
 
 
 Using the default parameters, we get the following results on "新闻标题短文本分类" valid data.
 
-|model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
-| ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
-| bert+softmax| - | - | - | -  |-    |    -   |  -   |    -    |
-|  TextCNN    | 0.7030 | 0.6927 | 0.7390| 0.7554|  0.0001  |  3   | 50 |   128  |
+|model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|lr_decay|
+| ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |-------|
+| bert+softmax|0.8470|0.8618 |0.8625  |0.8899   |1e-5     |    5   |  50    |    32    |False|
+| TextCNN+BPE| 0.8105 | 0.8193 | 0.8223| 0.8382|0.001  |  5     | 50     |   128    |False|
+|  TextCNN   | 0.8029 | 0.8196 | 0.8104| 0.8308|0.001  |  5     | 50     |   128    |False|
 # For GCN：
 
 ## Input
@@ -205,6 +211,9 @@ model = GCN.GCN2Layer()
 ```
 python train_gcn.py
 ```
+
+
+
 
 
 
