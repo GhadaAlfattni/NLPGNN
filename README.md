@@ -1,3 +1,4 @@
+# fennlp 0.0.4
 
 
 [![Build Status](https://travis-ci.org/kyzhouhzau/fennlp.svg?branch=master)](https://travis-ci.org/kyzhouhzau/fennlp/branches)
