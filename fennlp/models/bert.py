@@ -62,6 +62,7 @@ class BERT(tf.keras.layers.Layer):
                                                position_embedding_name="position_embeddings",
                                                initializer_range=self.initializer_range,
                                                max_position_embeddings=self.max_position_embeddings,
+                                               use_one_hot_embedding=self.use_one_hot_embeddings,
                                                name="embeddings"
                                                )
         self.encoder_layers = []

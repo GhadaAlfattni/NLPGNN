@@ -1,4 +1,4 @@
-![avatar](att.png)
+# fennlp 0.0.5
 
 [![Build Status](https://travis-ci.org/kyzhouhzau/fennlp.svg?branch=master)](https://travis-ci.org/kyzhouhzau/fennlp/branches)
 [![PyPI version](https://badge.fury.io/py/fennlp.svg)](https://badge.fury.io/py/fenlp)
@@ -11,18 +11,30 @@
 An out-of-the-box NLP toolkit can easily help you solve tasks such as
 Entity Recognition, Text Classification, Relation Extraction and so on.
 Currently it contain the following models (see "tests" dictionary for more details):
-* BERT (tf2.0 layer, Chinese and English Version)
+
+Models:
+* BERT
+* ALBERT
+* TextCNN
+* TucKER
+* GCN
+
+Examples (See tests for more details):
+
 * BERT-NER (Chinese and English Version)
 * BERT-CRF-NER (Chinese and English Version)
-* BERT-Sentence-Classification(Chinese and English Version)
+* BERT-Sentence-Classification (Chinese and English Version)
+* ALBERT-NER (Chinese and English Version)
 * TextCNN(Chinese and English Version)
 * GCN (2 Layer, CORA data set)
 * TuckER (English Version, WN18 data set)
 
-Use BERT as tensorflow2.0's layer, See tests dictionary for more details。
+Use BERT or ALBERT as tensorflow2.0's layer, See tests dictionary for more details。
 
 
 # Status
+2020/3/19: add test example "albert_ner_train.py" "albert_ner_test.py"
+
 2020/3/16: add model for training sub word embedding based on bpe methods.
 The trained embedding is used in TextCNN model for improve it's improvement.
 See "tran_bpe_embeding.py" for more details.
@@ -43,6 +55,7 @@ See "tran_bpe_embeding.py" for more details.
 * typeguard
 * gensim
 * tqdm
+* sentencepiece
 
 # Usage
 
@@ -213,6 +226,8 @@ python train_gcn.py
 ```
 
 
+关系的展示不是很好
+生物上的应用
 
 
 

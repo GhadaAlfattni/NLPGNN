@@ -15,7 +15,7 @@ class WDEmbedding(tf.keras.layers.Layer):
                  embedding_size=128,
                  initializer_range=0.02,
                  word_embedding_name="word_embeddings",
-                 use_one_hot_embedding=False,
+                 use_one_hot_embedding=True,
                  name=None,
                  **kwargs):
         super(WDEmbedding, self).__init__(name=name, **kwargs)
@@ -60,6 +60,7 @@ class SegPosEmbedding(tf.keras.layers.Layer):
                  position_embedding_name="position_embeddings",
                  initializer_range=0.02,
                  max_position_embeddings=512,
+                 use_one_hot_embedding=True,
                  name=None,
                  **kwargs):
 
@@ -72,6 +73,7 @@ class SegPosEmbedding(tf.keras.layers.Layer):
         self.initializer_range = initializer_range
         self.max_position_embeddings = max_position_embeddings
         self.hidden_dropout_prob = hidden_dropout_prob
+        self.use_one_hot_embedding = use_one_hot_embedding
 
     def build(self, input_shape):
 
@@ -107,10 +109,13 @@ class SegPosEmbedding(tf.keras.layers.Layer):
         if self.use_token_type:
             if token_type_ids is None:
                 raise ValueError("token_type_ids must be specified if use_token_type is True")
-            flat_token_type_ids = tf.reshape(token_type_ids, [-1])
-            one_hot_ids = tf.one_hot(flat_token_type_ids, depth=self.token_type_vocab_size)
-            token_type_embeddings = tf.linalg.matmul(one_hot_ids, self.token_type_table)
-            token_type_embeddings = tf.reshape(token_type_embeddings, [batch_size, seq_length, width])
+            if self.use_one_hot_embedding:
+                flat_token_type_ids = tf.reshape(token_type_ids, [-1])
+                one_hot_ids = tf.one_hot(flat_token_type_ids, depth=self.token_type_vocab_size)
+                token_type_embeddings = tf.linalg.matmul(one_hot_ids, self.token_type_table)
+                token_type_embeddings = tf.reshape(token_type_embeddings, [batch_size, seq_length, width])
+            else:
+                token_type_embeddings = tf.gather(self.token_type_table,token_type_ids)
             output += token_type_embeddings
         # position features
         if self.use_position_embeddings:

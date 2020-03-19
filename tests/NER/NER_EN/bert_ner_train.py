@@ -3,7 +3,7 @@ from fennlp.models import bert
 from fennlp.optimizers import optim
 from fennlp.tools import init_weights_from_checkpoint
 from fennlp.datas.checkpoint import LoadCheckpoint
-from fennlp.datas.dataloader import ZHTFWriter, ZHTFLoader
+from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric, Losess
 
 # 载入参数
@@ -48,9 +48,8 @@ model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
 model.summary()
 
 # 构建优化器
-lr = tf.keras.optimizers.schedules.PolynomialDecay(2e-5,decay_steps=10000,end_learning_rate=0.0)
+lr = tf.keras.optimizers.schedules.PolynomialDecay(2e-5, decay_steps=10000, end_learning_rate=0.0)
 optimizer_bert = optim.Adam(learning_rate=lr)
-# optimizer_bert = tf.keras.optimizers.Adam(1e-5)
 
 # 构建损失函数
 # mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False,use_mask=True)
@@ -63,10 +62,10 @@ init_weights_from_checkpoint(model,
                              pooler=False)
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
-writer = ZHTFWriter(param["maxlen"], vocab_file,
-                    modes=["train"], check_exist=False)
+writer = TFWriter(param["maxlen"], vocab_file,
+                  modes=["train"], check_exist=False)
 
-ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=8)
+ner_load = TFLoader(param["maxlen"], param["batch_size"], epoch=8)
 
 # 训练模型
 # 使用tensorboard

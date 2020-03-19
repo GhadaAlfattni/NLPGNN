@@ -3,7 +3,7 @@ from fennlp.models import bert
 from fennlp.optimizers import optim
 from fennlp.tools import init_weights_from_checkpoint
 from fennlp.datas.checkpoint import LoadCheckpoint
-from fennlp.datas.dataloader import ZHTFWriter, ZHTFLoader
+from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric, Losess
 
 # 载入参数
@@ -59,10 +59,10 @@ init_weights_from_checkpoint(model,
                              pooler=False)
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
-writer = ZHTFWriter(param["maxlen"], vocab_file,
+writer = TFWriter(param["maxlen"], vocab_file,
                     modes=["train"], check_exist=False)
 
-ner_load = ZHTFLoader(param["maxlen"], param["batch_size"], epoch=5)
+ner_load = TFLoader(param["maxlen"], param["batch_size"], epoch=5)
 
 # 训练模型
 # 使用tensorboard

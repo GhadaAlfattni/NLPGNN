@@ -1,19 +1,28 @@
 import numpy as np
 import tensorflow as tf
 import os
-from fennlp.tokenizers import tokenization
+from fennlp.tokenizers import tokenization,albert_tokenization
 import collections
 import codecs
 import pickle
 
 
-class ZHTFWriter(object):
+class TFWriter(object):
     def __init__(self, maxlen, vocab_files, modes, task="NER", do_low_case=False,
-                 check_exist=False):
+                 check_exist=False,tokenizer="wordpiece",spm_model_file=None):
         self.maxlen = maxlen
-        self.fulltoknizer = tokenization.FullTokenizer(
-            vocab_file=vocab_files, do_lower_case=do_low_case
-        )
+        if tokenizer == "wordpiece":
+
+            self.fulltoknizer = tokenization.FullTokenizer(
+                vocab_file=vocab_files, do_lower_case=do_low_case
+            )
+            self.convert_to_unicode = tokenization.convert_to_unicode
+        elif tokenizer == "sentencepiece":
+            self.fulltoknizer = albert_tokenization.FullTokenizer.from_scratch(
+                vocab_file=vocab_files, do_lower_case=do_low_case,spm_model_file=spm_model_file
+            )
+            self.convert_to_unicode = albert_tokenization.convert_to_unicode
+
         for mode in modes:
             self.mode = mode
             print("Writing {}".format(self.mode))
@@ -49,11 +58,11 @@ class ZHTFWriter(object):
         for line in lines:
             line = line.strip().split('\t')
             if mode == "test":
-                w = tokenization.convert_to_unicode(line[0])
+                w = self.convert_to_unicode(line[0])
                 label = "0"
             else:
-                w = tokenization.convert_to_unicode(line[0])
-                label = tokenization.convert_to_unicode(line[-1])
+                w = self.convert_to_unicode(line[0])
+                label = self.convert_to_unicode(line[-1])
             examples.append((w, label))
             self.label_list.update(set(label.split()))
         self.label_list = sorted(self.label_list)
@@ -165,7 +174,7 @@ class ZHTFWriter(object):
         return list(init_weights)
 
 
-class ZHTFLoader(object):
+class TFLoader(object):
     def __init__(self, maxlen, batch_size, task="ner", epoch=None):
         self.maxlen = maxlen
         self.batch_size = batch_size

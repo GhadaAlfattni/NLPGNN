@@ -122,6 +122,56 @@ def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
         initialized_variable_names[name + ":0"] = 1
     return (assignment_map, initialized_variable_names)
 
+def albert_init_weights_from_checkpoint(model, checkpoint_file, num_layer=12, pooler=False):
+    def _loader(checkpoint_file):
+        def _loader(name):
+            return tf.train.load_variable(checkpoint_file, name)
+
+        return _loader
+
+    init_vars = tf.train.list_variables(checkpoint_file)
+    for x in init_vars:
+        (name, var) = (x[0], x[1])
+    loader = _loader(checkpoint_file)
+    weights = [
+        loader("bert/embeddings/word_embeddings"),
+        loader("bert/embeddings/token_type_embeddings"),
+        loader("bert/embeddings/position_embeddings"),
+        loader("bert/embeddings/LayerNorm/gamma"),
+        loader("bert/embeddings/LayerNorm/beta"),
+        loader("bert/encoder/embedding_hidden_mapping_in/kernel"),
+        loader("bert/encoder/embedding_hidden_mapping_in/bias"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/attention_1/self/query/kernel"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/attention_1/self/query/bias"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/attention_1/self/key/kernel"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/attention_1/self/key/bias"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/attention_1/self/value/kernel"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/attention_1/self/value/bias"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/attention_1/output/dense/kernel"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/attention_1/output/dense/bias"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/ffn_1/intermediate/dense/kernel"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/ffn_1/intermediate/dense/bias"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/ffn_1/intermediate/output/dense/kernel"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/ffn_1/intermediate/output/dense/bias"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/LayerNorm/gamma"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/LayerNorm/beta"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/LayerNorm_1/gamma"),
+        loader("bert/encoder/transformer/group_0/inner_group_0/LayerNorm_1/beta"),
+    ]
+    if pooler:
+        weights.extend([loader("bert/pooler/dense/kernel"),
+                        loader("bert/pooler/dense/bias")])
+
+    variables = model.get_layer("albert").variables
+    varsg = [(var.name,var.shape) for var in variables]
+    # weight = {name for name in weights}
+    for i, var in enumerate(varsg):
+        print("INIT WEIGHTS {},{}".format(var[0],var[1]), i)
+
+    model.get_layer("albert").set_weights(weights)
+    del weights
+
+
 
 def init_weights_from_checkpoint(model, checkpoint_file, num_layer,pooler):
     def _loader(checkpoint_file):

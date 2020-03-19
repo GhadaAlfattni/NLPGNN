@@ -4,32 +4,37 @@
 @Author:zhoukaiyin
 """
 import tensorflow as tf
-from fennlp.tools import get_activation, get_shape_list, create_attention_mask_from_input_mask
+from fennlp.tools import get_activation, get_shape_list, create_initializer
+from fennlp.layers import dense
 from fennlp.layers.embedding import WDEmbedding, SegPosEmbedding
-from fennlp.layers.transformer import Transformer
+from fennlp.layers.albert_transformer import AlbertTransformer
 
 
-class BERT(tf.keras.layers.Layer):
+class ALBERT(tf.keras.layers.Layer):
     def __init__(self,
                  param=None,
                  batch_size=2,
                  maxlen=128,
-                 vocab_size=21128,
-                 hidden_size=768,
+                 vocab_size=30000,
+                 hidden_size=4096,
                  hidden_act="gelu",
-                 num_attention_heads=12,
+                 num_hidden_groups=1,
+                 embedding_size=128,
+                 inner_group_num=1,
+                 num_attention_heads=64,
                  initializer_range=0.02,
-                 hidden_dropout_prob=0.1,
+                 hidden_dropout_prob=0.,
                  type_vocab_size=2,
                  intermediate_size=3072,
                  max_position_embeddings=512,
-                 attention_probs_dropout_prob=0.1,
-                 use_one_hot_embeddings=True,
-                 do_return_all_layers=True,
                  num_hidden_layers=12,
+                 attention_probs_dropout_prob=0.,
+                 use_one_hot_embedding=False,
+                 do_return_all_layers=True,
+                 use_einsum=True,
                  name=None,
                  **kwargs):
-        super(BERT, self).__init__(name=name, **kwargs)
+        super(ALBERT, self).__init__(name=name, **kwargs)
         self.maxlen = param.get("maxlen", maxlen)
         self.intermediate_size = param.get("intermediate_size", intermediate_size)
         self.vocab_size = param.get("vocab_size", vocab_size)
@@ -43,16 +48,20 @@ class BERT(tf.keras.layers.Layer):
         self.max_position_embeddings = param.get("max_position_embeddings", max_position_embeddings)
         self.attention_probs_dropout_prob = param.get("attention_probs_dropout_prob", attention_probs_dropout_prob)
         self.num_hidden_layers = param.get("num_hidden_layers", num_hidden_layers)
-
-        self.use_one_hot_embeddings = use_one_hot_embeddings
+        self.num_hidden_groups = param.get("num_hidden_groups", num_hidden_groups)
+        self.inner_group_num = param.get("inner_group_num", inner_group_num)
+        self.embedding_size = param.get("embedding_size", embedding_size)
+        self.use_einsum = use_einsum
+        self.use_one_hot_embedding = use_one_hot_embedding
+        self.attention_head_size = hidden_size // num_attention_heads
         self.do_return_all_layers = do_return_all_layers
 
     def build(self, input_shape):
         self.token_embedding = WDEmbedding(vocab_size=self.vocab_size,
-                                           embedding_size=self.hidden_size,
+                                           embedding_size=self.embedding_size,
                                            initializer_range=self.initializer_range,
                                            word_embedding_name="word_embeddings",
-                                           use_one_hot_embedding=self.use_one_hot_embeddings,
+                                           use_one_hot_embedding=self.use_one_hot_embedding,
                                            name="embeddings")
         # segment and position embedding
         self.segposembedding = SegPosEmbedding(use_token_type=True,
@@ -63,27 +72,34 @@ class BERT(tf.keras.layers.Layer):
                                                position_embedding_name="position_embeddings",
                                                initializer_range=self.initializer_range,
                                                max_position_embeddings=self.max_position_embeddings,
+                                               use_one_hot_embedding=self.use_one_hot_embedding,
                                                name="embeddings"
                                                )
-        self.encoder_layers = []
-        for layer_idx in range(self.num_hidden_layers):
-            self.encoder_layer = Transformer(
-                batch_size=self.batch_size,
-                seq_length=self.maxlen,
-                hidden_size=self.hidden_size,
-                num_attention_heads=self.num_attention_heads,
-                intermediate_size=self.intermediate_size,
-                intermediate_act_fn=get_activation(self.hidden_act),
-                hidden_dropout_prob=self.attention_probs_dropout_prob,
-                initializer_range=self.initializer_range,
-                name="layer_{}".format(layer_idx)
-            )
-            self.encoder_layers.append(self.encoder_layer)
+        self.shape_change = dense.DenseLayer2d(
+            self.hidden_size,
+            create_initializer(self.initializer_range),
+            None,
+            use_einsum=self.use_einsum,
+            name="embedding_hidden_mapping_in",
+        )
+
+        self.encoder_layer = AlbertTransformer(
+            hidden_size=self.hidden_size,
+            num_attention_heads=self.num_attention_heads,
+            attention_head_size=self.attention_head_size,
+            attention_probs_dropout_prob=self.attention_probs_dropout_prob,
+            intermediate_size=self.intermediate_size,
+            intermediate_act_fn=get_activation(self.hidden_act),
+            initializer_range=self.initializer_range,
+            hidden_dropout_prob=self.hidden_dropout_prob,
+            use_einsum=True,
+            name="inner_group_{}".format(0)
+        )
 
         self.pool_out = tf.keras.layers.Dense(
             self.hidden_size,
             activation=tf.tanh,
-            # kernel_constraint=create_initializer(config.initializer_range),
+            kernel_constraint=create_initializer(self.initializer_range),
             name="dense"
         )
 
@@ -101,22 +117,36 @@ class BERT(tf.keras.layers.Layer):
             input_mask = tf.ones(shape=[batch_size, seq_length], dtype=tf.int32)
         if token_type_ids is None:
             token_type_ids = tf.zeros(shape=[batch_size, seq_length], dtype=tf.int32)
-        self.embedding_output = self.token_embedding(input_ids)
-        self.embedding_output = self.segposembedding(self.embedding_output, token_type_ids, is_training)
-        with tf.keras.backend.name_scope("encoder"):
-            attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
-            all_layer_outputs = []
-            layer_encode_output = self.embedding_output
-            # print(layer_encode_output)#[3,5,768]
-            for encoder_layer in self.encoder_layers:
-                layer_encode_input = layer_encode_output
-                layer_encode_output = encoder_layer(layer_encode_input, attention_mask, is_training)
-                all_layer_outputs.append(layer_encode_output)
-            if self.do_return_all_layers:
-                self.sequence_output = all_layer_outputs
-            else:
-                self.sequence_output = layer_encode_output
-        self.sequence_output = self.sequence_output[-1]
+        with tf.keras.backend.name_scope("bert"):
+            self.embedding_output = self.token_embedding(input_ids)
+            self.embedding_output = self.segposembedding(self.embedding_output, token_type_ids, is_training)
+            with tf.keras.backend.name_scope("encoder"):
+                input_shape = get_shape_list(self.embedding_output, expected_rank=3)
+                input_width = input_shape[2]
+                all_layer_outputs = []
+                if input_width != self.hidden_size:
+                    prev_output = self.shape_change(self.embedding_output)
+                else:
+                    prev_output = self.embedding_output
+                with tf.keras.backend.name_scope("transformer"):
+                    for i in range(self.num_hidden_layers):
+                        group_idx = int(i / self.num_hidden_layers * self.num_hidden_groups)
+
+                        with tf.keras.backend.name_scope("group_%d" % group_idx):
+                            layer_output = prev_output
+
+                            for inner_group_idx in range(self.inner_group_num):
+                                # with tf.keras.backend.name_scope("layer_%d" % i):
+                                # for encoder_layer in encoder_layers:
+                                layer_output = self.encoder_layer(layer_output, input_mask, is_training)
+                                prev_output = layer_output
+                                all_layer_outputs.append(layer_output)
+
+                if self.do_return_all_layers:
+                    self.sequence_output = all_layer_outputs
+                else:
+                    self.sequence_output = layer_output
+            self.sequence_output = self.sequence_output[-1]
 
         return self
 
