@@ -29,8 +29,7 @@ Examples (See tests for more details):
 * GCN (2 Layer, CORA data set)
 * TuckER (English Version, WN18 data set)
 
-Use BERT or ALBERT as tensorflow2.0's layer, See tests dictionary for more details。
-
+All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
 # Status
 2020/3/19: add test example "albert_ner_train.py" "albert_ner_test.py"
@@ -140,6 +139,33 @@ Non-trainable params: 0
 _________________________________________________________________
 ```
 
+### 3、albert (base, large, xlage, xxlage)
+```python
+from fennlp.models import albert
+bert = albert.ALBERT()
+```
+
+```
+python albert_ner_train.py 
+```
+```
+large
+Model: "albert_ner"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+albert (ALBERT)              multiple                  11092992  
+_________________________________________________________________
+dense (Dense)                multiple                  6921      
+=================================================================
+Total params: 11,099,913
+Trainable params: 11,099,913
+Non-trainable params: 0
+_________________________________________________________________
+
+```
+
+
 Using the default parameters, we get the following results on "中文糖尿病标注数据集" and "CoNLL-2003" valid data.
 
 |model    | macro-F1| macro-P| macro-R|  lr    |epoch   |maxlen  |batch_size| data|
@@ -147,9 +173,11 @@ Using the default parameters, we get the following results on "中文糖尿病�
 | bert+crf| -       | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
 |   bert  |  -      | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
 |   bert  | 0.9007  | 0.9067 | 0.9132 | 2e-5    |8       |   128  |  8   |    CoNLL-2003    |
+|albert+base| 0.8367  | 0.8527 | 0.8462 | 2e-5  |10      |   128  |  16 |    CoNLL-2003    |
+|albert+large| 0.8670  | 0.8778 | 0.8731 | 2e-5 |10     |   128  |  4 |    CoNLL-2003    |
 
 # For Sentence Classfication
-
+                 
 ## Input
 * put train, valid and test file in "Input" dictionary.
 * data format: reference data in "\tests\CLS\BERT( or TextCNN)\Input".
