@@ -48,7 +48,6 @@ See "tran_bpe_embeding.py" for more details.
 
 2020/2/25: add test example "bert_ner_train.py" and "bert_ner_test.py".
 
-
 # Requirement
 * tensorflow-gpu>=2.0
 * typeguard
