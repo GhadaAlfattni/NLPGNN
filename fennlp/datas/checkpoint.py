@@ -8,29 +8,35 @@ import json
 
 
 class LoadCheckpoint(object):
-    def __init__(self, langurage='zh', model="bert",paramaters="base"):
+    def __init__(self, langurage='zh', model="bert",
+                 paramaters="base", cased=True, url=None):
         self.lg = langurage
         if model == "bert":
             if langurage == "zh":
                 url = "https://storage.googleapis.com/bert_models/" \
                       "2018_11_03/chinese_L-12_H-768_A-12.zip"
             elif langurage == "en":
-                if paramaters=="base":
+                if paramaters == "base":
+                    if cased:
 
-                    url = "https://storage.googleapis.com/bert_models/" \
-                      "2018_10_18/uncased_L-12_H-768_A-12.zip"
+                        url = "https://storage.googleapis.com/bert_models/" \
+                              "2018_10_18/cased_L-12_H-768_A-12.zip"
+                    else:
+                        url = "https://storage.googleapis.com/bert_models/" \
+                              "2018_10_18/uncased_L-12_H-768_A-12.zip"
                 else:
-                    raise ValueError("Other models still not support!")
+                    print("Other models still not support! But you could set url equal the checkpoint link.")
+                    url = url
 
         elif model == "albert":
             if langurage == "en":
-                if paramaters=="base":
+                if paramaters == "base":
                     url = "https://storage.googleapis.com/albert_models/albert_base_v2.tar.gz"
-                elif paramaters =="large":
+                elif paramaters == "large":
                     url = "https://storage.googleapis.com/albert_models/albert_large_v2.tar.gz"
-                elif paramaters =="xlarge":
+                elif paramaters == "xlarge":
                     url = "https://storage.googleapis.com/albert_models/albert_xlarge_v2.tar.gz"
-                elif paramaters =="xxlarge":
+                elif paramaters == "xxlarge":
                     url = "https://storage.googleapis.com/albert_models/albert_xxlarge_v2.tar.gz"
                 else:
                     raise ValueError("Other models still not support!")
@@ -103,9 +109,9 @@ class LoadCheckpoint(object):
             bert_param.pop("pooler_type")
         if not pretraining and self.lg == 'en':
             pass
-        bert_param["batch_size"] = 32
-        bert_param["maxlen"] = 80
-        bert_param["label_size"] = 10
+        bert_param["batch_size"] = 0
+        bert_param["maxlen"] = 0
+        bert_param["label_size"] = 0
         return bert_param, vocab_file, model_path
 
     def load_albert_param(self, pretraining=False):
@@ -123,4 +129,4 @@ class LoadCheckpoint(object):
         albert_param["batch_size"] = 32
         albert_param["maxlen"] = 80
         albert_param["label_size"] = 10
-        return albert_param, vocab_file, model_path,spm_model_file
+        return albert_param, vocab_file, model_path, spm_model_file

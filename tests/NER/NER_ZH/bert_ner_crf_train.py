@@ -59,9 +59,13 @@ model.summary()
 
 # 构建优化器
 
-lr = tf.keras.optimizers.schedules.PolynomialDecay(2e-5,decay_steps=50000,end_learning_rate=0.0)
-optimizer_bert = optim.Adam(learning_rate=lr)
-optimizer_crf = optim.Adam(learning_rate=1e-3)
+optimizer_bert = optim.AdamWarmup(learning_rate=2e-5,  # 重要参数
+                                  decay_steps=10000,  # 重要参数
+                                  warmup_steps=1000, )
+optimizer_crf = optim.AdamWarmup(learning_rate=1e-3,
+                                decay_steps = 10000,  # 重要参数
+                                warmup_steps = 1000,
+                                )
 #
 # 初始化参数
 init_weights_from_checkpoint(model,

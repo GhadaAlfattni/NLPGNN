@@ -44,10 +44,10 @@ model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
 
 model.summary()
 
-lr_schedule = tf.keras.optimizers.schedules.PolynomialDecay(2e-5, decay_steps=100000, end_learning_rate=0.0)
-
 # 构建优化器
-optimizer_bert = optim.Adam(learning_rate=lr_schedule)
+optimizer_bert = optim.AdamWarmup(learning_rate=2e-5,  # 重要参数
+                                  decay_steps=10000,  # 重要参数
+                                  warmup_steps=1000, )
 #
 # # 构建损失函数
 # mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False,use_mask=True)

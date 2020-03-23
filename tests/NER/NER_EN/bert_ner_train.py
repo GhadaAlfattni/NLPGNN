@@ -7,7 +7,7 @@ from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric, Losess
 
 # 载入参数
-load_check = LoadCheckpoint(langurage='en')
+load_check = LoadCheckpoint(langurage='en', cased=True)
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
@@ -48,16 +48,16 @@ model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
 model.summary()
 
 # 构建优化器
-lr = tf.keras.optimizers.schedules.PolynomialDecay(2e-5, decay_steps=10000, end_learning_rate=0.0)
-optimizer_bert = optim.Adam(learning_rate=lr)
+optimizer_bert = optim.AdamWarmup(learning_rate=2e-5,  # 重要参数
+                                  decay_steps=10000,  # 重要参数
+                                  warmup_steps=1000, )
 
 # 构建损失函数
-# mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False,use_mask=True)
 sparse_categotical_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
 
 # 初始化参数
 init_weights_from_checkpoint(model,
-                             model_path,
+                             model_path,# bert_model.ckpt
                              param["num_hidden_layers"],
                              pooler=False)
 

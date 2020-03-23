@@ -16,7 +16,7 @@
 
 import tensorflow as tf
 from typeguard import typechecked
-from sklearn.metrics import recall_score, precision_score, f1_score, accuracy_score
+from sklearn.metrics import classification_report, recall_score, precision_score, f1_score, accuracy_score
 from collections import defaultdict
 from .type import AcceptableDTypes, FloatTensorLike
 from typing import Optional
@@ -285,6 +285,21 @@ class SparsePrecisionScore(object):
         return precision
 
 
+class SparseClassficationReport(object):
+    def __init__(self, predict_sparse=False):
+        self.predict_sparse = predict_sparse
+
+    def __call__(self, y_true, y_predict, labels=None):
+        y_true = tf.reshape(tf.constant(y_true), [-1]).numpy()
+        if self.predict_sparse:
+            y_predict = tf.reshape(y_predict, [-1]).numpy()
+
+        else:
+            y_predict = tf.reshape(tf.argmax(y_predict, -1), [-1]).numpy()
+        precision = classification_report(y_true, y_predict, labels=labels)
+        return precision
+
+
 class SparseAccuracy(object):
     def __init__(self, predict_sparse=False):
         self.predict_sparse = predict_sparse
@@ -312,7 +327,6 @@ class HitN_MR_MRR():
             self.data_idxs = loader.get_data_idxs(loader.test_data)
         # er_vocb={(h,r):[t1,t2]},train+valid
         self.er_vocab = loader.get_er_vocab(loader.get_data_idxs(loader.data))
-
 
     def __call__(self, model, batch_size):
         ranks = []
@@ -350,5 +364,5 @@ class HitN_MR_MRR():
         hit3 = np.mean(hits[2])
         hit1 = np.mean(hits[0])
         MR = np.mean(ranks)
-        MRR =np.mean(1./np.array(ranks))
+        MRR = np.mean(1. / np.array(ranks))
         return hit1, hit3, hit5, hit10, MR, MRR

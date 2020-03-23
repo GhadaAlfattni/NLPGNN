@@ -15,7 +15,7 @@ features, adj, labels, idx_train, idx_val, idx_test = loader.load()
 
 model = GCN.GCN2Layer(_HIDDEN_DIM, _NUM_CLASS, _DROP_OUT_RATE)
 
-optimizer = optim.Adam(learning_rate=0.01)
+optimizer = tf.keras.optimizers.Adam(0.01)
 
 crossentropy = Losess.MaskSparseCategoricalCrossentropy(from_logits=False)
 accscore = Metric.SparseAccuracy()

@@ -57,12 +57,12 @@ class TFWriter(object):
         self.label_list = set()
         for line in lines:
             line = line.strip().split('\t')
-            if mode == "test":
-                w = self.convert_to_unicode(line[0])
-                label = "0"
-            else:
-                w = self.convert_to_unicode(line[0])
-                label = self.convert_to_unicode(line[-1])
+            # if mode == "test":
+            #     w = self.convert_to_unicode(line[0])
+            #     label = "0"
+            # else:
+            w = self.convert_to_unicode(line[0])
+            label = self.convert_to_unicode(line[-1])
             examples.append((w, label))
             self.label_list.update(set(label.split()))
         self.label_list = sorted(self.label_list)

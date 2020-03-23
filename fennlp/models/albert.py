@@ -107,9 +107,9 @@ class ALBERT(tf.keras.layers.Layer):
 
     def call(self, inputs, is_training=True):
         input_ids, token_type_ids, input_mask = tf.split(inputs, 3, 0)
-        input_ids = tf.cast(tf.squeeze(input_ids, axis=0), tf.int64)
-        token_type_ids = tf.cast(tf.squeeze(token_type_ids, axis=0), tf.int64)
-        input_mask = tf.cast(tf.squeeze(input_mask, axis=0), tf.int64)
+        input_ids = tf.cast(tf.squeeze(input_ids, axis=0), tf.int32)
+        token_type_ids = tf.cast(tf.squeeze(token_type_ids, axis=0), tf.int32)
+        input_mask = tf.cast(tf.squeeze(input_mask, axis=0), tf.int32)
         input_shape = get_shape_list(input_ids)
         batch_size = input_shape[0]
         seq_length = input_shape[1]

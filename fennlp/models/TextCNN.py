@@ -14,7 +14,7 @@ class TextCNN(tf.keras.Model):
                  embedding_dims,
                  class_num=2,
                  weights=None,
-                 weights_trainable=True,
+                 weights_trainable=False,
                  kernel_sizes=[2, 3, 4],
                  filter_size=[128, 128, 128],
                  name=None,

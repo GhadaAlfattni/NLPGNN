@@ -32,6 +32,8 @@ Examples (See tests for more details):
 All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
 # Status
+2020/3/23: add RAdam optimizer.
+
 2020/3/19: add test example "albert_ner_train.py" "albert_ner_test.py"
 
 2020/3/16: add model for training sub word embedding based on bpe methods.
@@ -164,15 +166,14 @@ _________________________________________________________________
 
 ```
 
-
 Using the default parameters, we get the following results on "中文糖尿病标注数据集" and "CoNLL-2003" valid data.
 
 |model    | macro-F1| macro-P| macro-R|  lr    |epoch   |maxlen  |batch_size| data|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
 | bert+crf| -       | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
 |   bert  |  -      | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
-|   bert  | 0.9007  | 0.9067 | 0.9132 | 2e-5    |8       |   128  |  8   |    CoNLL-2003    |
-|albert+base| 0.8367  | 0.8527 | 0.8462 | 2e-5  |10      |   128  |  16 |    CoNLL-2003    |
+|   bert  | 0.9128  | 0.9208 | 0.9227 | 2e-5    |5      |   128  |  8   |    CoNLL-2003    |
+|albert+base| 0.8512  | 0.8678 | 0.8589 | 1e-4 |8      |   128  |  16 |    CoNLL-2003    |
 |albert+large| 0.8670  | 0.8778 | 0.8731 | 2e-5 |10     |   128  |  4 |    CoNLL-2003    |
 
 # For Sentence Classfication
@@ -232,11 +233,11 @@ For more detail reference [WordPiece](https://mp.weixin.qq.com/s/Il8sh66TUCEPskb
 
 Using the default parameters, we get the following results on "新闻标题短文本分类" valid data.
 
-|model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|lr_decay|
-| ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |-------|
-| bert+softmax|0.8470|0.8618 |0.8625  |0.8899   |1e-5     |    5   |  50    |    32    |False|
-| TextCNN+BPE| 0.8105 | 0.8193 | 0.8223| 0.8382|0.001  |  5     | 50     |   128    |False|
-|  TextCNN   | 0.8029 | 0.8196 | 0.8104| 0.8308|0.001  |  5     | 50     |   128    |False|
+|model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
+| ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
+| bert+softmax|0.8470|0.8618 |0.8625  |0.8899   |1e-5     |    5   |  50    |    32    |
+| TextCNN+BPE| 0.8102 | 0.8212 | 0.8223| 0.8194|0.01  |  10     | 50     |   128    |
+|  TextCNN   | 0.8122 | 0.8226 | 0.8220| 0.8406|0.01  |  10     | 50     |   128    |
 # For GCN：
 
 ## Input
@@ -252,9 +253,6 @@ model = GCN.GCN2Layer()
 python train_gcn.py
 ```
 
-
-关系的展示不是很好
-生物上的应用
 
 
 
