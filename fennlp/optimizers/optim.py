@@ -143,6 +143,7 @@ class RAdam(tf.keras.optimizers.Optimizer):
                  beta_2=0.999,
                  epsilon=1e-8,
                  freedom=5,
+                 weight_decay_rate=0.01,
                  weight_decay_pattern=["LayerNorm", "layer_norm", "bias"],
                  name='RAdam',
                  **kwargs):
@@ -165,10 +166,12 @@ class RAdam(tf.keras.optimizers.Optimizer):
         self._set_hyper('beta_1', beta_1)
         self._set_hyper('beta_2', beta_2)
         self._set_hyper('freedom', freedom)
+        self._set_hyper('weight_decay_rate',weight_decay_rate)
         self.learning_rate = learning_rate
         self.epsilon = epsilon or tf.keras.backend.epislon()
         self.learning_rate = learning_rate
         self.weight_decay_pattern = weight_decay_pattern
+        self.weight_decay_rate = weight_decay_rate
 
     def _create_slots(self, var_list):
         for var in var_list:
