@@ -16,34 +16,36 @@ from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 
 
-class BPE:
-    def __init__(self, corpus, vocab_files, do_low_case=False):
+class BPE(object):
+    def __init__(self,corpus, vocab_files,langurage='zh', do_low_case=True):
         self.corpus = corpus
         self.fulltoknizer = tokenization.FullTokenizer(
             vocab_file=vocab_files, do_lower_case=do_low_case
         )
         if os.path.basename(corpus).endswith(".bz2"):
-            self.wiki_bz_process()
+            self.wiki_bz_process(langurage)
         else:
             pass
         self.corpus = os.path.join(os.path.dirname(self.corpus), 'wiki.txt')
         if not os.path.exists(os.path.join(os.path.dirname(self.corpus), "pre_" + os.path.basename(self.corpus))):
-
             self.process_corpus()
         self.processed = os.path.join(os.path.dirname(self.corpus), "pre_" + os.path.basename(self.corpus))
 
-    def wiki_bz_process(self):
+    def wiki_bz_process(self,langurage):
         wiki = extract_pages(bz2file.open(self.corpus))
         f = codecs.open(os.path.join(os.path.dirname(self.corpus), 'wiki.txt'),
                         'w', encoding='utf-8')
         w = tqdm(wiki, desc="Currently get 0 files!")
-        for i, d in enumerate(w):
-            if not re.findall('^[a-zA-Z]+:', d[0]) and not re.findall(u'^#', d[1]):
-                s = self.wiki_replace(d)
-                f.write(s + '\n\n\n')
-                i += 1
-                if i % 100 == 0:
-                    w.set_description('Currently got %s files' % i)
+        if langurage=='zh':
+            for i, d in enumerate(w):
+                if not re.findall('^[a-zA-Z]+:', d[0]) and not re.findall(u'^#', d[1]):
+                    s = self.wiki_replace(d)
+                    f.write(s + '\n\n\n')
+                    i += 1
+                    if i % 100 == 0:
+                        w.set_description('Currently got %s files' % i)
+        elif langurage=='en':
+            pass
 
     def wiki_replace(self, d):
         s = d[1]
@@ -83,7 +85,7 @@ class BPE:
         logger.info("running %s" % "bpe.py")
         output = os.path.join(os.path.dirname(self.corpus), "word2vec.vector")
         model = Word2Vec(LineSentence(self.processed),
-                         size=embed_size, window=window_size, min_count=min_count,iter=iter,
+                         size=embed_size, window=window_size, min_count=min_count, iter=iter,
                          workers=multiprocessing.cpu_count())
         model.save(os.path.join(os.path.dirname(self.corpus), "word2vec.model"))
         model.wv.save_word2vec_format(output, binary=False)

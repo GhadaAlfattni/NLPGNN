@@ -129,9 +129,9 @@ def albert_init_weights_from_checkpoint(model, checkpoint_file, num_layer=12, po
 
         return _loader
 
-    init_vars = tf.train.list_variables(checkpoint_file)
-    for x in init_vars:
-        (name, var) = (x[0], x[1])
+    # init_vars = tf.train.list_variables(checkpoint_file)
+    # for x in init_vars:
+    #     (name, var) = (x[0], x[1])
     loader = _loader(checkpoint_file)
     weights = [
         loader("bert/embeddings/word_embeddings"),

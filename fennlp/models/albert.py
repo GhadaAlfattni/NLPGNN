@@ -30,7 +30,6 @@ class ALBERT(tf.keras.layers.Layer):
                  num_hidden_layers=12,
                  attention_probs_dropout_prob=0.,
                  use_one_hot_embedding=False,
-                 do_return_all_layers=True,
                  use_einsum=True,
                  name=None,
                  **kwargs):
@@ -54,7 +53,6 @@ class ALBERT(tf.keras.layers.Layer):
         self.use_einsum = use_einsum
         self.use_one_hot_embedding = use_one_hot_embedding
         self.attention_head_size = hidden_size // num_attention_heads
-        self.do_return_all_layers = do_return_all_layers
 
     def build(self, input_shape):
         self.token_embedding = WDEmbedding(vocab_size=self.vocab_size,
@@ -99,10 +97,8 @@ class ALBERT(tf.keras.layers.Layer):
         self.pool_out = tf.keras.layers.Dense(
             self.hidden_size,
             activation=tf.tanh,
-            kernel_constraint=create_initializer(self.initializer_range),
-            name="dense"
-        )
-
+            # kernel_constraint=create_initializer(self.initializer_range),
+            name="dense")
         self.built = True
 
     def call(self, inputs, is_training=True):
@@ -123,7 +119,7 @@ class ALBERT(tf.keras.layers.Layer):
             with tf.keras.backend.name_scope("encoder"):
                 input_shape = get_shape_list(self.embedding_output, expected_rank=3)
                 input_width = input_shape[2]
-                all_layer_outputs = []
+                self.all_layer_outputs = []
                 if input_width != self.hidden_size:
                     prev_output = self.shape_change(self.embedding_output)
                 else:
@@ -140,13 +136,8 @@ class ALBERT(tf.keras.layers.Layer):
                                 # for encoder_layer in encoder_layers:
                                 layer_output = self.encoder_layer(layer_output, input_mask, is_training)
                                 prev_output = layer_output
-                                all_layer_outputs.append(layer_output)
-
-                if self.do_return_all_layers:
-                    self.sequence_output = all_layer_outputs
-                else:
-                    self.sequence_output = layer_output
-            self.sequence_output = self.sequence_output[-1]
+                                self.all_layer_outputs.append(layer_output)
+            self.sequence_output = layer_output
 
         return self
 
@@ -160,7 +151,7 @@ class ALBERT(tf.keras.layers.Layer):
         return self.sequence_output
 
     def get_all_encoder_layers(self):
-        return self.all_encoder_layers
+        return self.all_layer_outputs
 
     def get_embedding_output(self):
         return self.embedding_output

@@ -29,10 +29,10 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
 binary_loss = tf.keras.losses.BinaryCrossentropy(from_logits=False, label_smoothing=label_smoothing)
 
 # 保存模型
-# checkpoint = tf.train.Checkpoint(model=model)
-# manager = tf.train.CheckpointManager(checkpoint, directory="./save",
-#                                      checkpoint_name="model.ckpt",
-#                                      max_to_keep=3)
+checkpoint = tf.train.Checkpoint(model=model)
+manager = tf.train.CheckpointManager(checkpoint, directory="./save",
+                                     checkpoint_name="model.ckpt",
+                                     max_to_keep=3)
 
 for epoch in range(500):
     losses = []
@@ -52,9 +52,8 @@ for epoch in range(500):
                                                                                            hit5, hit10, MRR))
 
         # For filter Warning in calculate gradient of moving_mean and moving_variance
-        grads = tape.gradient(loss, [variable for variable in model.variables if variable.trainable])
+        grads = tape.gradient(loss, model.trainable_variable)
         optimizer.apply_gradients(
-            grads_and_vars=zip(grads, [variable for variable in model.variables if variable.trainable]))
-
+            grads_and_vars=zip(grads, model.trainable_variable))
         Batch += 1
 

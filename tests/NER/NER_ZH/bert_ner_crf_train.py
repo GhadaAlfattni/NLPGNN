@@ -12,8 +12,8 @@ load_check = LoadCheckpoint(langurage='zh')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 2
-param["maxlen"] = 5
+param["batch_size"] = 8
+param["maxlen"] = 100
 param["label_size"] = 46
 
 # 构建模型

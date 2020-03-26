@@ -48,19 +48,21 @@ class TextCNN(tf.keras.Model):
             # but they have the same purpose
             self.max_poolings.append(tf.keras.layers.GlobalAvgPool1D())
         self.dense = tf.keras.layers.Dense(class_num, activation='softmax')
+        self.bn = tf.keras.layers.BatchNormalization()
 
-    def call(self, inputs):
+    def call(self, inputs, training=True):
         embedding = self.embedding(inputs)
         convs = []
+        # embedding = self.bn(embedding, training=training)
         for i, k in enumerate(self.kernel_sizes):
             out = self.convs[i](embedding)
             out = self.max_poolings[i](out)
             convs.append(out)
-
         out = tf.keras.layers.concatenate(convs)
+        out = self.bn(out, training=training)
         out = self.dense(out)
         return out
 
-    def predict(self, inputs):
-        re = self(inputs)
+    def predict(self, inputs, training=False):
+        re = self(inputs, training)
         return re

@@ -24,7 +24,6 @@ class BERT(tf.keras.layers.Layer):
                  max_position_embeddings=512,
                  attention_probs_dropout_prob=0.1,
                  use_one_hot_embeddings=True,
-                 do_return_all_layers=True,
                  num_hidden_layers=12,
                  name=None,
                  **kwargs):
@@ -44,7 +43,6 @@ class BERT(tf.keras.layers.Layer):
         self.num_hidden_layers = param.get("num_hidden_layers", num_hidden_layers)
 
         self.use_one_hot_embeddings = use_one_hot_embeddings
-        self.do_return_all_layers = do_return_all_layers
 
     def build(self, input_shape):
         self.token_embedding = WDEmbedding(vocab_size=self.vocab_size,
@@ -105,19 +103,14 @@ class BERT(tf.keras.layers.Layer):
         self.embedding_output = self.segposembedding(self.embedding_output, token_type_ids, is_training)
         with tf.keras.backend.name_scope("encoder"):
             attention_mask = create_attention_mask_from_input_mask(input_ids, input_mask)
-            all_layer_outputs = []
+            self.all_layer_outputs = []
             layer_encode_output = self.embedding_output
             # print(layer_encode_output)#[3,5,768]
             for encoder_layer in self.encoder_layers:
                 layer_encode_input = layer_encode_output
                 layer_encode_output = encoder_layer(layer_encode_input, attention_mask, is_training)
-                all_layer_outputs.append(layer_encode_output)
-            if self.do_return_all_layers:
-                self.sequence_output = all_layer_outputs
-            else:
-                self.sequence_output = layer_encode_output
-        self.sequence_output = self.sequence_output[-1]
-
+                self.all_layer_outputs.append(layer_encode_output)
+            self.sequence_output = layer_encode_output
         return self
 
     def get_pooled_output(self):
@@ -130,7 +123,7 @@ class BERT(tf.keras.layers.Layer):
         return self.sequence_output
 
     def get_all_encoder_layers(self):
-        return self.all_encoder_layers
+        return self.all_layer_outputs
 
     def get_embedding_output(self):
         return self.embedding_output

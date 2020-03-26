@@ -16,6 +16,7 @@ Models:
 * BERT
 * ALBERT
 * TextCNN
+* Bilstm+Attention
 * TucKER
 * GCN
 
@@ -23,8 +24,10 @@ Examples (See tests for more details):
 
 * BERT-NER (Chinese and English Version)
 * BERT-CRF-NER (Chinese and English Version)
-* BERT-Sentence-Classification (Chinese and English Version)
+* BERT-CLS (Chinese and English Version)
 * ALBERT-NER (Chinese and English Version)
+* ALBERT-CLS (Chinese and English Version)
+* Bilstm+Attention (Chinese and English Version)
 * TextCNN(Chinese and English Version)
 * GCN (2 Layer, CORA data set)
 * TuckER (English Version, WN18 data set)
@@ -32,6 +35,8 @@ Examples (See tests for more details):
 All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
 # Status
+2020/3/26: add Bilstm+Attention example for classification
+
 2020/3/23: add RAdam optimizer.
 
 2020/3/19: add test example "albert_ner_train.py" "albert_ner_test.py"
@@ -170,9 +175,9 @@ Using the default parameters, we get the following results on "中文糖尿病�
 
 |model    | macro-F1| macro-P| macro-R|  lr    |epoch   |maxlen  |batch_size| data|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
-| bert+crf| -       | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
-|   bert  |  -      | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
-|   bert  | 0.9128  | 0.9208 | 0.9227 | 2e-5    |5      |   128  |  8   |    CoNLL-2003    |
+| bert+base+crf| -       | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
+|   bert+base  |  -      | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
+|   bert+base  | 0.9128  | 0.9208 | 0.9227 | 2e-5    |5      |   128  |  8   |  CoNLL-2003    |
 |albert+base| 0.8512  | 0.8678 | 0.8589 | 1e-4 |8      |   128  |  16 |    CoNLL-2003    |
 |albert+large| 0.8670  | 0.8778 | 0.8731 | 2e-5 |10     |   128  |  4 |    CoNLL-2003    |
 
@@ -231,13 +236,16 @@ python train_bpe_embedding.py
 For more detail reference [WordPiece](https://mp.weixin.qq.com/s/Il8sh66TUCEPskbypDZLAg) 
 
 
-Using the default parameters, we get the following results on "新闻标题短文本分类" valid data.
+Using the default parameters, we get the following results on "新闻标题短文本分类"  and SST-2 valid data.
 
-|model    | macro-F1| macro-P| macro-R| ACC     |  lr    |epoch   |maxlen  |batch_size|
-| ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
-| bert+softmax|0.8470|0.8618 |0.8625  |0.8899   |1e-5     |    5   |  50    |    32    |
-| TextCNN+BPE| 0.8102 | 0.8212 | 0.8223| 0.8194|0.01  |  10     | 50     |   128    |
-|  TextCNN   | 0.8122 | 0.8226 | 0.8220| 0.8406|0.01  |  10     | 50     |   128    |
+|model    | ACC     |  lr    |epoch   |maxlen  |batch_size|data|
+| ------- | ------- |------- |------- |------- |-------   |-------   |
+|bert+base|0.8899   |1e-5     |    5   |  50    |    32    |新闻标题短文本分类|
+|bert+base| 0.9266|2e-5  |  3     | 128    |  8    |SST-2|
+|albert+base| 0.9186|1e-5  |  3     | 128    |  16    |SST-2|
+|Bilstm+attention| 0.8269|0.01  |  3     | 128    |  64    |SST-2|
+|TextCNN| 0.8021|0.01  |  3     | 128    |  64    |SST-2|
+
 # For GCN：
 
 ## Input

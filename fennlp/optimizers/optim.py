@@ -143,7 +143,7 @@ class RAdam(tf.keras.optimizers.Optimizer):
                  beta_2=0.999,
                  epsilon=1e-8,
                  freedom=5,
-                 weight_decay_rate=0.01,
+                 weight_decay_rate=0.,
                  weight_decay_pattern=["LayerNorm", "layer_norm", "bias"],
                  name='RAdam',
                  **kwargs):

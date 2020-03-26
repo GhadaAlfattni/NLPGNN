@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import os
-from fennlp.tokenizers import tokenization,albert_tokenization
+from fennlp.tokenizers import tokenization, albert_tokenization
 import collections
 import codecs
 import pickle
@@ -9,7 +9,7 @@ import pickle
 
 class TFWriter(object):
     def __init__(self, maxlen, vocab_files, modes, task="NER", do_low_case=False,
-                 check_exist=False,tokenizer="wordpiece",spm_model_file=None):
+                 check_exist=False, tokenizer="wordpiece", spm_model_file=None):
         self.maxlen = maxlen
         if tokenizer == "wordpiece":
 
@@ -19,7 +19,7 @@ class TFWriter(object):
             self.convert_to_unicode = tokenization.convert_to_unicode
         elif tokenizer == "sentencepiece":
             self.fulltoknizer = albert_tokenization.FullTokenizer.from_scratch(
-                vocab_file=vocab_files, do_lower_case=do_low_case,spm_model_file=spm_model_file
+                vocab_file=vocab_files, do_lower_case=do_low_case, spm_model_file=spm_model_file
             )
             self.convert_to_unicode = albert_tokenization.convert_to_unicode
 
@@ -161,11 +161,12 @@ class TFWriter(object):
 
     def get_init_weight(self, word2vec, vocab_size, embedding_size):
         init_weights = np.zeros([vocab_size, embedding_size])
-        with codecs.open(word2vec,encoding='utf-8') as rf:
+        with codecs.open(word2vec, encoding='utf-8') as rf:
             line = rf.readline()
-            embed = line.strip().split()[-1]
-            # if embedding_size != embed:
-            #     raise ValueError("embedding_size must equal word2vec size!")
+            embed = int(line.strip().split()[-1])
+            if embedding_size != embed:
+                print(embedding_size,embed)
+                raise ValueError("embedding_size must equal word2vec size!")
             for line in rf:
                 lines = line.strip().split()
                 word_index = self.fulltoknizer.convert_tokens_to_ids([lines[0]])
@@ -222,7 +223,7 @@ class TFLoader(object):
             lambda record: self.decode_record(record)
         )
         dataset = dataset.batch(
-                batch_size=self.batch_size,
-                drop_remainder=True)
+            batch_size=self.batch_size,
+            drop_remainder=True)
 
         return dataset

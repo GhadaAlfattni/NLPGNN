@@ -9,6 +9,7 @@ import tensorflow as tf
 from fennlp.tools import create_initializer, get_shape_list
 
 
+# for bert
 class WDEmbedding(tf.keras.layers.Layer):
     def __init__(self,
                  vocab_size,
@@ -50,6 +51,7 @@ class WDEmbedding(tf.keras.layers.Layer):
         return output
 
 
+# for bert
 class SegPosEmbedding(tf.keras.layers.Layer):
     def __init__(self,
                  use_token_type=True,
@@ -94,12 +96,13 @@ class SegPosEmbedding(tf.keras.layers.Layer):
             dtype=tf.keras.backend.floatx(),
             initializer=create_initializer(self.initializer_range),
             trainable=True)
+
         self.drop_out = tf.keras.layers.Dropout(self.hidden_dropout_prob)
         self.layer_norm = tf.keras.layers.LayerNormalization(axis=-1, name="LayerNorm")
 
         self.built = True
 
-    def call(self, input_tensor, token_type_ids=None,is_training=True):
+    def call(self, input_tensor, token_type_ids=None, is_training=True):
         inputshape = get_shape_list(input_tensor, expected_rank=3)
         batch_size = inputshape[0]
         seq_length = inputshape[1]
@@ -115,7 +118,7 @@ class SegPosEmbedding(tf.keras.layers.Layer):
                 token_type_embeddings = tf.linalg.matmul(one_hot_ids, self.token_type_table)
                 token_type_embeddings = tf.reshape(token_type_embeddings, [batch_size, seq_length, width])
             else:
-                token_type_embeddings = tf.gather(self.token_type_table,token_type_ids)
+                token_type_embeddings = tf.gather(self.token_type_table, token_type_ids)
             output += token_type_embeddings
         # position features
         if self.use_position_embeddings:
@@ -132,3 +135,12 @@ class SegPosEmbedding(tf.keras.layers.Layer):
         # in official work they not use training
         output = self.drop_out(output, training=is_training)
         return output
+
+
+class ZengPosEmbedding(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(ZengPosEmbedding, self).__init__(**kwargs)
+        pass
+
+    def call(self):
+        pass
