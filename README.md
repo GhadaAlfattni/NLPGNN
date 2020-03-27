@@ -243,6 +243,7 @@ Using the default parameters, we get the following results on "新闻标题短�
 |bert+base|0.8899   |1e-5     |    5   |  50    |    32    |新闻标题短文本分类|
 |bert+base| 0.9266|2e-5  |  3     | 128    |  8    |SST-2|
 |albert+base| 0.9186|1e-5  |  3     | 128    |  16    |SST-2|
+|albert+large| 0.9461|1e-6  |  3     | 128    |  4    |SST-2|
 |Bilstm+attention| 0.8269|0.01  |  3     | 128    |  64    |SST-2|
 |TextCNN| 0.8233|0.01  |  3     | 128    |  64    |SST-2|
 
