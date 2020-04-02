@@ -97,6 +97,33 @@ class FPNNormalization(tf.keras.layers.Layer):
     def compute_output_shape(self, input_shape):
         return input_shape
 
+
 class BatchNormalization(tf.keras.layers.Layer):
     def __init__(self):
         pass
+
+
+class GPTNorm(tf.keras.layers.Layer):
+    def __init__(self, epsilon, name, **kwargs):
+        super(GPTNorm, self).__init__(name=name, **kwargs)
+        self.epsilon = epsilon
+
+    def build(self, input_shape):
+        n_state = input_shape[-1]
+        self.g = self.add_weight(
+            shape=[n_state],
+            initializer=tf.constant_initializer(1),
+            name='g',
+        )
+        self.b = self.add_weight(
+            shape=[n_state],
+            initializer=tf.constant_initializer(0),
+            name='b',
+        )
+
+    def call(self, inputs, axis=-1):
+        u = tf.reduce_mean(inputs, axis=axis, keepdims=True)
+        s = tf.reduce_mean(tf.square(inputs - u), axis=axis, keepdims=True)
+        x = (inputs - u) * tf.math.rsqrt(s + self.epsilon)
+        x = x * self.g + self.b
+        return x

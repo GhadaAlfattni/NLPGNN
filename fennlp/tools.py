@@ -12,7 +12,8 @@ import numpy as np
 version = tf.__version__
 Version_float = float('.'.join(version.split('.')[:2]))
 
-#For BERT
+
+# For BERT
 def create_initializer(initializer_range=0.02):
     """Creates a `truncated_normal_initializer` with the given range."""
     # return tf.keras.initializers.get("truncated_normal")
@@ -77,10 +78,12 @@ def assert_rank(tensor, expected_rank, name=None):
             "to expected rank {}".format(name, actual_rank, str(expected_rank))
         )
 
+
 def gelu(x):
     import numpy as np
     cdf = 0.5 * (1.0 + tf.tanh((np.sqrt(2 / np.pi) * (x + 0.044715 * tf.pow(x, 3)))))
     return x * cdf
+
 
 def get_activation(activation_string):
     "map string to activation function"
@@ -121,6 +124,7 @@ def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
         initialized_variable_names[name] = 1
         initialized_variable_names[name + ":0"] = 1
     return (assignment_map, initialized_variable_names)
+
 
 def albert_init_weights_from_checkpoint(model, checkpoint_file, num_layer=12, pooler=False):
     def _loader(checkpoint_file):
@@ -163,17 +167,16 @@ def albert_init_weights_from_checkpoint(model, checkpoint_file, num_layer=12, po
                         loader("bert/pooler/dense/bias")])
 
     variables = model.get_layer("albert").variables
-    varsg = [(var.name,var.shape) for var in variables]
+    varsg = [(var.name, var.shape) for var in variables]
     # weight = {name for name in weights}
     for i, var in enumerate(varsg):
-        print("INIT WEIGHTS {},{}".format(var[0],var[1]), i)
+        print("INIT WEIGHTS {},{}".format(var[0], var[1]), i)
 
     model.get_layer("albert").set_weights(weights)
     del weights
 
 
-
-def init_weights_from_checkpoint(model, checkpoint_file, num_layer,pooler):
+def bert_init_weights_from_checkpoint(model, checkpoint_file, num_layer, pooler=False):
     def _loader(checkpoint_file):
         def _loader(name):
             return tf.train.load_variable(checkpoint_file, name)
@@ -212,7 +215,7 @@ def init_weights_from_checkpoint(model, checkpoint_file, num_layer,pooler):
     weights.extend(encoder)
     if pooler:
         weights.extend([loader("bert/pooler/dense/kernel"),
-                    loader("bert/pooler/dense/bias")])
+                        loader("bert/pooler/dense/bias")])
 
     variables = model.get_layer("bert").variables
     varname = [var.name for var in variables]
@@ -221,6 +224,55 @@ def init_weights_from_checkpoint(model, checkpoint_file, num_layer,pooler):
         print("INIT WEIGHTS {}".format(var), i)
 
     model.get_layer("bert").set_weights(weights)
+    del weights
+
+
+def gpt2_init_weights_from_checkpoint(model, checkpoint_file, num_layer):
+    def _loader(checkpoint_file):
+        def _loader(name):
+            return tf.train.load_variable(checkpoint_file, name)
+
+        return _loader
+
+    # init_vars = tf.train.list_variables(checkpoint_file)
+    # for x in init_vars:
+    #     (name, var) = (x[0], x[1])
+    #     print(name, var)
+
+    loader = _loader(checkpoint_file)
+    weights = [
+        loader("model/wte"),
+        loader("model/wpe"),
+    ]
+    encoder = []
+    for i in range(num_layer):
+        encoder.extend([
+            loader("model/h{}/ln_1/g".format(i)),
+            loader("model/h{}/ln_1/b".format(i)),
+            loader("model/h{}/attn/c_attn/w".format(i))[0],
+            loader("model/h{}/attn/c_attn/b".format(i)),
+            loader("model/h{}/attn/c_proj/w".format(i))[0],
+            loader("model/h{}/attn/c_proj/b".format(i)),
+            loader("model/h{}/ln_2/g".format(i)),
+            loader("model/h{}/ln_2/b".format(i)),
+            loader("model/h{}/mlp/c_fc/w".format(i))[0],
+            loader("model/h{}/mlp/c_fc/b".format(i)),
+            loader("model/h{}/mlp/c_proj/w".format(i))[0],
+            loader("model/h{}/mlp/c_proj/b".format(i)),
+        ])
+    weights.extend(encoder)
+    weights.extend([
+        loader("model/ln_f/g"),
+        loader("model/ln_f/b"),
+    ])
+
+    variables = model.get_layer("gpt2").variables
+    varname = [var.name for var in variables]
+    # weight = {name for name in weights}
+    for i, var in enumerate(varname):
+        print("INIT WEIGHTS {}".format(var), i)
+
+    model.get_layer("gpt2").set_weights(weights)
     del weights
 
 
@@ -255,7 +307,6 @@ def get_shape_list(tensor, expected_rank=None, name=None):
             non_static_indexes.append(index)
 
     if not non_static_indexes:
-
         return shape
 
     dyn_shape = tf.shape(tensor)
@@ -263,22 +314,38 @@ def get_shape_list(tensor, expected_rank=None, name=None):
         shape[index] = dyn_shape[index]
     return shape
 
+
 # For GNN
-def uniform(shape,scale=0.05,name=None):
-    initial = tf.keras.backend.random_uniform(shape,minval=-scale,maxval=scale,dtype=tf.float32)
-    return tf.Variable(initial,name=name)
+def uniform(shape, scale=0.05, name=None):
+    initial = tf.keras.backend.random_uniform(shape, minval=-scale, maxval=scale, dtype=tf.float32)
+    return tf.Variable(initial, name=name)
 
-def glort(shape,name=None):
-    initial_range = np.sqrt(6.0/(shape[0]+shape[1]))
-    initial = tf.keras.backend.random_uniform(shape,minval=-initial_range,
-                                              maxval=initial_range,dtype=tf.float32)
-    return tf.Variable(initial,name=name)
 
-def zeros(shape,name=None):
-    initial = tf.zeros(shape,dtype=tf.float32)
-    return tf.Variable(initial,name=name)
+def glort(shape, name=None):
+    initial_range = np.sqrt(6.0 / (shape[0] + shape[1]))
+    initial = tf.keras.backend.random_uniform(shape, minval=-initial_range,
+                                              maxval=initial_range, dtype=tf.float32)
+    return tf.Variable(initial, name=name)
 
-def ones(shape,name=None):
-    initial = tf.ones(shape,dtype=tf.float32)
-    return tf.Variable(initial,name=name)
 
+def zeros(shape, name=None):
+    initial = tf.zeros(shape, dtype=tf.float32)
+    return tf.Variable(initial, name=name)
+
+
+def ones(shape, name=None):
+    initial = tf.ones(shape, dtype=tf.float32)
+    return tf.Variable(initial, name=name)
+
+
+class MyDict(dict):
+    __setattr__ = dict.__setitem__
+    __getattr__ = dict.__getitem__
+
+def dict_to_object(dictObj):
+    if not isinstance(dictObj, dict):
+        return dictObj
+    inst=MyDict()
+    for k,v in dictObj.items():
+        inst[k] = dict_to_object(v)
+    return inst

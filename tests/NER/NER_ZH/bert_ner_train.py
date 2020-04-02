@@ -1,7 +1,7 @@
 import tensorflow as tf
 from fennlp.models import bert
 from fennlp.optimizers import optim
-from fennlp.tools import init_weights_from_checkpoint
+from fennlp.tools import bert_init_weights_from_checkpoint
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric, Losess
@@ -54,7 +54,7 @@ optimizer_bert = optim.AdamWarmup(learning_rate=2e-5,  # 重要参数
 # mask_sparse_categotical_loss = Losess.MaskSparseCategoricalCrossentropy(from_logits=False,use_mask=True)
 sparse_categotical_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
 # 初始化参数
-init_weights_from_checkpoint(model,
+bert_init_weights_from_checkpoint(model,
                              model_path,
                              param["num_hidden_layers"],
                              pooler=False)

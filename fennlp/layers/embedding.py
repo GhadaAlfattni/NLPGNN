@@ -16,7 +16,7 @@ class WDEmbedding(tf.keras.layers.Layer):
                  embedding_size=128,
                  initializer_range=0.02,
                  word_embedding_name="word_embeddings",
-                 use_one_hot_embedding=True,
+                 use_one_hot_embedding=False,
                  name=None,
                  **kwargs):
         super(WDEmbedding, self).__init__(name=name, **kwargs)
@@ -137,6 +137,7 @@ class SegPosEmbedding(tf.keras.layers.Layer):
         return output
 
 
+# TODO
 class ZengPosEmbedding(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(ZengPosEmbedding, self).__init__(**kwargs)
@@ -144,3 +145,34 @@ class ZengPosEmbedding(tf.keras.layers.Layer):
 
     def call(self):
         pass
+
+
+# for bert
+class WTEmbedding(tf.keras.layers.Layer):
+    def __init__(self,
+                 vocab_size,
+                 embedding_size=128,
+                 initializer_range=0.02,
+                 word_embedding_name="word_embeddings",
+                 name=None,
+                 **kwargs):
+        super(WTEmbedding, self).__init__(name=name, **kwargs)
+        self.vocab_size = vocab_size
+        self.embedding_size = embedding_size
+        self.initializer_range = initializer_range
+        self.word_embedding_name = word_embedding_name
+
+    def build(self, input_shape):
+        self.input_spec = tf.keras.layers.InputSpec(shape=input_shape)
+        self.embedding_table = self.add_weight(
+            name=self.word_embedding_name,
+            dtype=tf.keras.backend.floatx(),
+            shape=[self.vocab_size, self.embedding_size],
+            initializer=create_initializer(self.initializer_range),
+            trainable=True,
+        )
+        self.built = True
+
+    def call(self, input_ids):
+        output = tf.gather(self.embedding_table, input_ids)
+        return output

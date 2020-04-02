@@ -5,11 +5,18 @@ import zipfile
 import tarfile
 import os
 import json
-
+from fennlp.tools import dict_to_object
 
 class LoadCheckpoint(object):
     def __init__(self, langurage='zh', model="bert",
                  paramaters="base", cased=True, url=None):
+        """
+        :param langurage: what kind of langurage you will processing
+        :param model: bert or albert
+        :param paramaters: could choose base large for bert base large xlarge xxlarge for albert
+        :param cased: use cased of uncased checkpoint
+        :param url: your own checkpoint
+        """
         self.lg = langurage
         if model == "bert":
             if langurage == "zh":
@@ -18,12 +25,18 @@ class LoadCheckpoint(object):
             elif langurage == "en":
                 if paramaters == "base":
                     if cased:
-
                         url = "https://storage.googleapis.com/bert_models/" \
                               "2018_10_18/cased_L-12_H-768_A-12.zip"
                     else:
                         url = "https://storage.googleapis.com/bert_models/" \
                               "2018_10_18/uncased_L-12_H-768_A-12.zip"
+                elif paramaters == "large":
+                    if cased:
+                        url = "https://storage.googleapis.com/bert_models/" \
+                              "2018_10_18/cased_L-24_H-1024_A-16.zip"
+                    else:
+                        url = "https://storage.googleapis.com/bert_models/" \
+                              "2018_10_18/uncased_L-24_H-1024_A-16.zip"
                 else:
                     print("Other models still not support! But you could set url equal the checkpoint link.")
                     url = url
@@ -44,26 +57,61 @@ class LoadCheckpoint(object):
             elif langurage == "zh":
                 raise ValueError("Currently not support load chinese model!")
 
-        self.url = url
-        self.size = self.getsize()
-        filename = self.url.split('/')[-1]
-        if not os.path.exists(filename):
-            open(filename, 'w').close()
-        if os.path.getsize(filename) != self.size:
-            print("Download and unzip: {}".format(filename))
-            self.download()
-        if filename.endswith("zip"):
-            self.unzip(filename)
-        elif filename.endswith('gz'):
-            self.ungz(filename)
+        elif model == "gpt2":
+            self.all_files = ['checkpoint', 'encoder.json', 'hparams.json', 'model.ckpt.data-00000-of-00001',
+                              'model.ckpt.index', 'model.ckpt.meta', 'vocab.bpe']
+            self.base_dir = ""
+            self.size = 0
+            if langurage == "en":
+                if paramaters == "base":
+                    if not os.path.exists("gpt_base"):
+                        os.mkdir("gpt_base")
+                    self.gpt_base_dir = "gpt_base"
+                    self.gpt_size = "117M"
+                elif paramaters == "medium":
+                    if not os.path.exists("gpt_medium"):
+                        os.mkdir("gpt_medium")
+                    self.gpt_base_dir = "gpt_medium"
+                    self.gpt_size = "345M"
+                elif paramaters == "large":
+                    if not os.path.exists("gpt_large"):
+                        os.mkdir("gpt_large")
+                    self.gpt_base_dir = "gpt_large"
+                    self.gpt_size = "762M"
 
-    def getsize(self):
+        if model in ["bert", "albert"]:
+            self.url = url
+            size = self.getsize(self.url)
+            filename = url.split('/')[-1]
+            if not os.path.exists(filename):
+                open(filename, 'w').close()
+            if os.path.getsize(filename) != self.size:
+                print("Download and unzip: {}".format(filename))
+                self.download(url, filename, size)
+            if filename.endswith("zip"):
+                self.unzip(filename)
+            elif filename.endswith('gz'):
+                self.ungz(filename)
+        if model in ["gpt2", "gpt"]:
+            for filename in self.all_files:
+                self.url = "https://storage.googleapis.com/gpt-2/models/" + self.gpt_size + "/" + filename
+                # if not os.path.exists(self.gpt_base_dir):
+                size = self.getsize(self.url)
+                if os.path.exists(os.path.join(self.gpt_base_dir, filename)):
+                    if os.path.getsize(os.path.join(self.gpt_base_dir, filename)) != size:
+                        print("\nFetching {} .....".format(filename))
+                        self.download(self.url, os.path.join(self.gpt_base_dir, filename), size)
+                else:
+                    print("\nFetching {} .....".format(filename))
+                    self.download(self.url, os.path.join(self.gpt_base_dir, filename), size)
+
+    def getsize(self, url):
         try:
-            r = requests.head(self.url)
+            r = requests.head(url)
             size = r.headers.get("Content-Length")
             return int(size)
         except:
-            print("Failed Download!")
+            print("Failed Download! Please Check your network!")
             exit()
 
     def bar(self, num, total):
@@ -76,15 +124,19 @@ class LoadCheckpoint(object):
         sys.stdout.write(r)
         sys.stdout.flush()
 
-    def download(self, chunk_size=1024):
+    def download(self, url, output, total_size, chunk_size=1024):
         num = 0
-        response = requests.get(self.url, stream=True)
-        with open(self.url.split('/')[-1], 'wb') as wf:
+        print(url)
+        response = requests.get(url, stream=True)
+        with open(output, 'wb') as wf:
             for chunk in response.iter_content(chunk_size=chunk_size):
                 if chunk:
                     wf.write(chunk)
-                    num += chunk_size
-                    self.bar(num, self.size)
+                    if total_size < chunk_size:
+                        num = total_size
+                    else:
+                        num += chunk_size
+                    self.bar(num, total_size)
 
     def unzip(self, filename):
         zip_file = zipfile.ZipFile(filename)
@@ -109,9 +161,10 @@ class LoadCheckpoint(object):
             bert_param.pop("pooler_type")
         if not pretraining and self.lg == 'en':
             pass
-        bert_param["batch_size"] = 0
-        bert_param["maxlen"] = 0
-        bert_param["label_size"] = 0
+        albert_param = dict_to_object(albert_param)
+        bert_param.batch_size = 0
+        bert_param.maxlen = 0
+        bert_param.label_size = 0
         return bert_param, vocab_file, model_path
 
     def load_albert_param(self, pretraining=False):
@@ -126,7 +179,25 @@ class LoadCheckpoint(object):
             albert_param.pop("gap_size")
             albert_param.pop("num_memory_blocks")
             albert_param.pop("down_scale_factor")
-        albert_param["batch_size"] = 32
-        albert_param["maxlen"] = 80
-        albert_param["label_size"] = 10
+        albert_param = dict_to_object(albert_param)
+        albert_param.batch_size = 32
+        albert_param.maxlen = 80
+        albert_param.label_size = 10
         return albert_param, vocab_file, model_path, spm_model_file
+
+    def load_gpt2_param(self, pretraining=False):
+        config = "{}/{}".format(self.gpt_base_dir, "hparams.json")
+        vocab_file = "{}/{}".format(self.gpt_base_dir, "vocab.bpe")
+        encoder_file = "{}/{}".format(self.gpt_base_dir, "encoder.json")
+        model_path = "{}/{}".format(self.gpt_base_dir, "model.ckpt")
+        gpt_param = json.load(open(config, 'r'))
+        gpt_param = dict_to_object(gpt_param)
+        gpt_param.batch_size = 1
+        gpt_param.maxlen = 1024
+        gpt_param.label_size = 10
+        return gpt_param, vocab_file, model_path,encoder_file
+
+
+
+
+

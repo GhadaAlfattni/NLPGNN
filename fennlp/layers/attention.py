@@ -19,6 +19,7 @@ def transpose_for_scores(input_tensor, batch_size, num_attention_heads, seq_leng
     return output_tensor
 
 
+# BERT Attention
 class MultiAttentionLayer(tf.keras.layers.Layer):
     """
     Performs multi-headed attention from `from_tensor` to `to_tensor`.
@@ -120,7 +121,7 @@ class MultiAttentionLayer(tf.keras.layers.Layer):
         # value [B,N,T,H]
         value_layer = transpose_for_scores(value_layer, self.batch_size, self.num_attention_heads,
                                            self.to_seq_length, self.size_per_head)
-        # context_layer [B,N,F,H]
+        # context_layer [B,N,T,H]
         context_layer = tf.linalg.matmul(attention_probs, value_layer)
         # [B,F,N,H]
         context_layer = tf.transpose(context_layer, [0, 2, 1, 3])
@@ -263,8 +264,8 @@ class HieAttention(tf.keras.layers.Layer):
         )
 
     def call(self, encoder_output):  # [batch,sequence_len,feats_dim]
-        if self.hidden_size!=encoder_output.shape[-1]:
-            raise ValueError("Dim of {} and {} must equal".format("hidden_size","encode_input"))
+        if self.hidden_size != encoder_output.shape[-1]:
+            raise ValueError("Dim of {} and {} must equal".format("hidden_size", "encode_input"))
         U = tf.math.tanh(tf.tensordot(encoder_output, self.W, axes=1) + self.B)  # [batch,sequence_len, attention_size]
         A = tf.tensordot(U, self.U, axes=1)  # [batch,sequence_len]
         alphas = tf.math.softmax(A)  # [batch,sequence_len]
@@ -363,3 +364,109 @@ class BahdanauAttentionLayer(tf.keras.layers.Layer):
     def compute_output_shape(self, input_shape):
         return input_shape
 
+
+# GPT Attention
+
+class GPTAttention(tf.keras.layers.Layer):
+    def __init__(self,
+                 num_attention_heads=12,
+                 initializer_range=0.02,
+                 resid_out_rate=0.0,
+                 attention_probs_dropout_prob=0.0,
+                 scale=True,
+                 name=None,
+                 **kwargs
+                 ):
+        super(GPTAttention, self).__init__(name=name, **kwargs)
+        self.num_attention_heads = num_attention_heads
+        self.scale = scale
+        self.attention_probs_dropout_prob = attention_probs_dropout_prob
+        self.initializer_range = initializer_range
+        self.resid_out_rate = resid_out_rate
+
+    def build(self, input_shape):
+        self.size_per_head = int(input_shape[-1] / self.num_attention_heads)
+        self.c_att = tf.keras.layers.Dense(
+            # 12*64
+            self.num_attention_heads * self.size_per_head * 3,
+            name="c_attn",
+            kernel_initializer=create_initializer(self.initializer_range)
+        )
+        self.c_proj = tf.keras.layers.Dense(
+            self.num_attention_heads * self.size_per_head,
+            name="c_proj",
+            kernel_initializer=create_initializer(self.initializer_range)
+        )
+
+        self.resid_out = tf.keras.layers.Dropout(self.resid_out_rate)
+
+        self.drop_out = tf.keras.layers.Dropout(self.attention_probs_dropout_prob)
+        self.built = True
+
+    def causal_attention_mask(self, nd, ns, dtype):
+        # 下半角矩阵
+        i = tf.range(nd)[:, None]
+        j = tf.range(ns)
+        m = i > j - ns + nd
+        return tf.cast(m, dtype)
+
+    def softmax(self, x, axis=-1):
+        x = x - tf.reduce_max(x, axis=axis, keepdims=True)
+        ex = tf.exp(x)
+        return ex / tf.reduce_sum(ex, axis=axis, keepdims=True)
+
+    def call(self, from_tensor, layer_past=None, is_training=True):
+        """
+
+        :param from_tensor: [B,T,H]
+        :param layer_past:
+        :param attention_mask:
+        :param head_mask:
+        :param is_training:
+        :return:
+        """
+        from_shape = get_shape_list(from_tensor, expected_rank=[3])
+        self.batch_size = from_shape[0]
+        self.from_seq_length = from_shape[1]
+
+        from_tensor = reshape_to_matrix(from_tensor)  # [B*T,Dim]
+        output = self.c_att(from_tensor)  # [B*T,3*N*H]
+        q, k, v = tf.split(output, 3, axis=1)
+        # q, k, v = tf.split(output, 3, axis=2)
+        # [B,N,T,H]
+        q = transpose_for_scores(q, self.batch_size, self.num_attention_heads,
+                                 self.from_seq_length, self.size_per_head)
+        k = transpose_for_scores(k, self.batch_size, self.num_attention_heads,
+                                 self.from_seq_length, self.size_per_head)
+        v = transpose_for_scores(v, self.batch_size, self.num_attention_heads,
+                                 self.from_seq_length, self.size_per_head)
+        present = tf.stack([k, v], axis=1)
+        if layer_past is not None:
+            past_key, past_value = tf.unstack(layer_past, axis=1)
+            k = tf.concat([past_key, k], axis=-2)
+            v = tf.concat([past_value, v], axis=-2)
+
+        # 'new_embeddings = [B, N, T, T]'
+        distance = tf.linalg.matmul(q, k, transpose_b=True)
+        if self.scale:
+            distance = distance*tf.math.rsqrt(float(get_shape_list(v)[-1]))
+
+        _, _, from_length, to_length = get_shape_list(distance)
+        distance_b = self.causal_attention_mask(from_length, to_length, dtype=distance.dtype)
+        distance_b = tf.reshape(distance_b, [1, 1, from_length, to_length])
+        distance = distance * distance_b - 1e10 * (1 - distance_b)
+
+        attention_probs = self.softmax(distance, axis=-1)
+        attention_probs = self.drop_out(attention_probs, training=is_training)
+
+        context_layer = tf.linalg.matmul(attention_probs, v)
+
+        context_layer = tf.transpose(context_layer, [0, 2, 1, 3])
+        c_shape = get_shape_list(context_layer)
+        # [B,T,N,H] > [B*T,N*H]
+        context_layer = tf.reshape(context_layer, [c_shape[0]* c_shape[1]] + [c_shape[-2] * c_shape[-1]])
+        output = self.c_proj(context_layer)  #
+        output = tf.reshape(output, [c_shape[0], c_shape[1], -1])
+        output = self.resid_out(output,training=is_training)
+
+        return output, present

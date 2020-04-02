@@ -5,7 +5,7 @@
 """
 import numpy as np
 import tensorflow as tf
-from fennlp.tools import get_shape_list
+from fennlp.tools import get_shape_list, create_initializer
 
 
 def einsum_via_matmul(input_tensor, w, num_inner_dims):
@@ -28,8 +28,8 @@ def einsum_via_matmul(input_tensor, w, num_inner_dims):
 
 class DenseLayer3d(tf.keras.layers.Layer):
     def __init__(self, num_attention_heads,
-                head_size, initializer, activation,
-                use_einsum, name=None, **kwargs):
+                 head_size, initializer, activation,
+                 use_einsum, name=None, **kwargs):
         super(DenseLayer3d, self).__init__(name=name, **kwargs)
         self.num_attention_heads = num_attention_heads
         self.head_size = head_size
@@ -145,3 +145,33 @@ class DenseLayer2d(tf.keras.layers.Layer):
             return self.activation(ret)
         else:
             return ret
+
+
+class TFConv1D(tf.keras.layers.Layer):
+    def __init__(self, nf, initializer_range=0.02, name=None, **kwargs):
+        """ TFConv1D layer as defined by Radford et al. for OpenAI GPT (and also used in GPT-2)
+            Basically works like a Linear layer but the weights are transposed
+            from:https://github.com/huggingface/transformers/blob/3ee431dd4c720e67e35a449b453d3dc2b15ccfff/src/transformers/modeling_tf_utils.py#L1385
+        """
+        super().__init__(name=name, **kwargs)
+        self.nf = nf
+        self.initializer_range = initializer_range
+
+    def build(self, input_shape):
+        self.nx = input_shape[-1]
+        self.weight = self.add_weight(
+            "w", shape=[1, self.nx, self.nf], initializer=create_initializer(self.initializer_range)
+        )
+        self.bias = self.add_weight("b", shape=[self.nf], initializer=tf.zeros_initializer())
+        self.built=True
+
+    def call(self, x):
+        bz, sl = get_shape_list(x)[:2]
+
+        x = tf.reshape(x, [-1, self.nx])
+        w = tf.reshape(self.weight, [-1, self.nf])
+        x = tf.matmul(x, w) + self.bias
+
+        x = tf.reshape(x, [bz, sl, self.nf])
+
+        return x

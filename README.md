@@ -15,6 +15,7 @@ Currently it contain the following models (see "tests" dictionary for more detai
 Models:
 * BERT
 * ALBERT
+* GPT2
 * TextCNN
 * Bilstm+Attention
 * TucKER
@@ -35,6 +36,9 @@ Examples (See tests for more details):
 All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
 # Status
+2020/4/2: add GPT2 model, could used parameters released by OpenAI (base,medium,large). 
+More detail reference dictionary "TG/EN/interactive.py"
+
 2020/3/26: add Bilstm+Attention example for classification
 
 2020/3/23: add RAdam optimizer.
@@ -93,7 +97,7 @@ python bert_ner_train.py
     The second part "O O O O B-Anatomy I-Anatomy I-Anatomy E-Anatomy O O O O" is the tag for each word in the sentence.
     Both of them use '\t' to concatenate.
 
-### 1、bert
+### 1、bert (base, large)
 
 ```python
 from fennlp.models import bert
@@ -192,7 +196,7 @@ Using the default parameters, we get the following results on "中文糖尿病�
     For each line in train(test,valid) contains two parts, the first part "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ，
     小 克 里 琴 科 谈 自 己 是 否 会 复 出" is the sentence, and second part "2" is the label.
 
-### 1、bert
+### 1、bert (base, large)
 
 ```python
 from fennlp.models import bert
@@ -246,6 +250,47 @@ Using the default parameters, we get the following results on "新闻标题短�
 |albert+large| 0.9461|1e-6  |  3     | 128    |  4    |SST-2|
 |Bilstm+attention| 0.8269|0.01  |  3     | 128    |  64    |SST-2|
 |TextCNN| 0.8233|0.01  |  3     | 128    |  64    |SST-2|
+
+# For Text Generation
+## GPT2 
+
+```python
+from fennlp.models import gpt2
+bert = gpt2.GPT2()
+```
+
+``` 
+python interactive.py
+```
+
+```
+Model: "gen_gp_t2" base
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+gpt2 (GPT2)                  multiple                  124439808 
+=================================================================
+Total params: 124,439,808
+Trainable params: 124,439,808
+Non-trainable params: 0
+_________________________________________________________________
+```
+
+Example:
+```
+Input >>> Stocks continue to fall this week
+
+Output >>> as stocks fall for the second consecutive week as investors flee for safe havens.
+
+"The market is off the charts," said John Schmieding, senior vice president, market strategy at RBC Capital Markets. 
+"We don't know what the Fed's intent is on, what direction it's going in. We don't know where they plan to go. 
+We don't know what direction they're going to move into."
+
+
+```
+
+
+
 
 # For GCN：
 
