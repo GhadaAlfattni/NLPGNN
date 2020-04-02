@@ -28,6 +28,7 @@ Examples (See tests for more details):
 * BERT-CLS (Chinese and English Version)
 * ALBERT-NER (Chinese and English Version)
 * ALBERT-CLS (Chinese and English Version)
+* GPT2-generation (English Version)
 * Bilstm+Attention (Chinese and English Version)
 * TextCNN(Chinese and English Version)
 * GCN (2 Layer, CORA data set)
