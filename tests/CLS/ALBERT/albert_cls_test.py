@@ -9,18 +9,18 @@ from fennlp.metrics import Metric
 load_check = LoadCheckpoint(langurage='en', model="albert", paramaters="base")
 param, vocab_file, model_path, spm_model_file = load_check.load_albert_param()
 # 定制参数
-param["batch_size"] = 8
-param["maxlen"] = 128
-param["label_size"] = 2
+param.batch_size = 8
+param.maxlen = 100
+param.label_size = 2
 
 
 # 构建模型
 class ALBERT_NER(tf.keras.Model):
     def __init__(self, param, **kwargs):
         super(ALBERT_NER, self).__init__(**kwargs)
-        self.batch_size = param["batch_size"]
-        self.maxlen = param["maxlen"]
-        self.label_size = param["label_size"]
+        self.batch_size = param.batch_size
+        self.maxlen = param.maxlen
+        self.label_size = param.label_size
         self.albert = albert.ALBERT(param)
         self.dense = tf.keras.layers.Dense(self.label_size, activation="relu")
 
@@ -38,16 +38,16 @@ class ALBERT_NER(tf.keras.Model):
 
 model = ALBERT_NER(param)
 
-model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
+model.build(input_shape=(3, param.batch_size, param.maxlen))
 
 model.summary()
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
-writer = TFWriter(param["maxlen"], vocab_file,task='cls',
+writer = TFWriter(param.maxlen, vocab_file,task='cls',
                   modes=["valid"], check_exist=False,
                   tokenizer="sentencepiece", spm_model_file=spm_model_file)
 
-ner_load = TFLoader(param["maxlen"], param["batch_size"],task='cls', epoch=10)
+ner_load = TFLoader(param.maxlen, param.batch_size,task='cls', epoch=10)
 
 # 训练模型
 # 使用tensorboard

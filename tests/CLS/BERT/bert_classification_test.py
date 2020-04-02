@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 from fennlp.models import bert
-from fennlp.optimizers import optim
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric, Losess
@@ -11,18 +10,18 @@ load_check = LoadCheckpoint()
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 32
-param["maxlen"] = 50
-param["label_size"] = 15
+param.batch_size = 8
+param.maxlen = 100
+param.label_size = 9
 
 
 # 构建模型
 class BERT_NER(tf.keras.Model):
     def __init__(self, param, **kwargs):
         super(BERT_NER, self).__init__(**kwargs)
-        self.batch_size = param["batch_size"]
-        self.maxlen = param["maxlen"]
-        self.label_size = param["label_size"]
+        self.batch_size = param.batch_size
+        self.maxlen = param.maxlen
+        self.label_size = param.label_size
         self.bert = bert.BERT(param)
         self.dense = tf.keras.layers.Dense(self.label_size, activation="relu")
 
@@ -40,15 +39,15 @@ class BERT_NER(tf.keras.Model):
 
 model = BERT_NER(param)
 
-model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
+model.build(input_shape=(3, param.batch_size , param.maxlen ))
 
 model.summary()
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
-writer = TFWriter(param["maxlen"], vocab_file,
+writer = TFWriter(param.maxlen, vocab_file,
                     modes=["valid"], task='cls', check_exist=True)
 
-load = TFLoader(param["maxlen"], param["batch_size"], task='cls')
+load = TFLoader(param.maxlen, param.batch_size, task='cls')
 
 # Metrics
 f1score = Metric.SparseF1Score(average="macro")

@@ -253,7 +253,7 @@ Using the default parameters, we get the following results on "新闻标题短�
 |TextCNN| 0.8233|0.01  |  3     | 128    |  64    |SST-2|
 
 # For Text Generation
-## GPT2 
+### 1、GPT2 
 
 ```python
 from fennlp.models import gpt2

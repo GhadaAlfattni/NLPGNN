@@ -9,17 +9,16 @@ load_check = LoadCheckpoint(langurage='en')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 8
-param["maxlen"] = 128
-param["label_size"] = 9
-
+param.batch_size = 8
+param.maxlen = 100
+param.label_size = 9
 
 class BERT_NER(tf.keras.Model):
     def __init__(self, param, **kwargs):
         super(BERT_NER, self).__init__(**kwargs)
-        self.batch_size = param["batch_size"]
-        self.maxlen = param["maxlen"]
-        self.label_size = param["label_size"]
+        self.batch_size = param.batch_size
+        self.maxlen = param.maxlen
+        self.label_size = param.label_size
 
         self.bert = bert.BERT(param)
 
@@ -40,15 +39,15 @@ class BERT_NER(tf.keras.Model):
 
 model = BERT_NER(param)
 
-model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
+model.build(input_shape=(3, param.batch_size, param.maxlen))
 
 model.summary()
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
-writer = TFWriter(param["maxlen"], vocab_file,
+writer = TFWriter(param.maxlen, vocab_file,
                     modes=["valid"], check_exist=False)
 
-ner_load = TFLoader(param["maxlen"], param["batch_size"], epoch=3)
+ner_load = TFLoader(param.maxlen, param.batch_size, epoch=3)
 
 # Metrics
 f1score = Metric.SparseF1Score(average="macro")

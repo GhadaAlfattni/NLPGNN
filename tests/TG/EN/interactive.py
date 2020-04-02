@@ -40,10 +40,10 @@ gpt2_init_weights_from_checkpoint(model, model_path, param.n_layer)
 generated = 0
 nsamples = 3
 while True:
-    raw_text = input("\nModel prompt >>> ")
+    raw_text = input("\nInput >>> ")
     while not raw_text:
-        print('Prompt should not be empty!')
-        raw_text = input("\nModel prompt >>> ")
+        print('Input should not be empty!')
+        raw_text = input("\nInput >>> ")
     context_tokens = tokenizer.tokenize(raw_text)
     generated = 0
     for _ in range(nsamples // param.batch_size):

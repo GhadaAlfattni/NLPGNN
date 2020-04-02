@@ -11,18 +11,18 @@ load_check = LoadCheckpoint(langurage='zh')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 16
-param["maxlen"] = 100
-param["label_size"] = 46
+param.batch_size = 6
+param.maxlen = 128
+param.label_size = 46
 
 
 # 构建模型
 class BERT_NER(tf.keras.Model):
     def __init__(self, param, **kwargs):
         super(BERT_NER, self).__init__(**kwargs)
-        self.batch_size = param["batch_size"]
-        self.maxlen = param["maxlen"]
-        self.label_size = param["label_size"]
+        self.batch_size = param.batch_size
+        self.maxlen = param.maxlen
+        self.label_size = param.label_size
         self.bert = bert.BERT(param)
         self.dense = tf.keras.layers.Dense(self.label_size, activation="relu")
 
@@ -41,7 +41,7 @@ class BERT_NER(tf.keras.Model):
 
 model = BERT_NER(param)
 
-model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
+model.build(input_shape=(3,param.batch_size, param.maxlen))
 
 model.summary()
 
@@ -56,14 +56,14 @@ sparse_categotical_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_log
 # 初始化参数
 bert_init_weights_from_checkpoint(model,
                              model_path,
-                             param["num_hidden_layers"],
+                             param.num_hidden_layers,
                              pooler=False)
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
-writer = TFWriter(param["maxlen"], vocab_file,
+writer = TFWriter(param.maxlen, vocab_file,
                     modes=["train"], check_exist=False)
 
-ner_load = TFLoader(param["maxlen"], param["batch_size"], epoch=5)
+ner_load = TFLoader(param.maxlen, param.batch_size, epoch=5)
 
 # 训练模型
 # 使用tensorboard

@@ -4,23 +4,24 @@ from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric
 import numpy as np
+
 # 载入参数
 load_check = LoadCheckpoint(langurage='zh')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param["batch_size"] = 16
-param["maxlen"] = 100
-param["label_size"] = 46
+param.batch_size = 16
+param.maxlen = 100
+param.label_size = 46
 
 
 # 构建模型
 class BERT_NER(tf.keras.Model):
     def __init__(self, param, **kwargs):
         super(BERT_NER, self).__init__(**kwargs)
-        self.batch_size = param["batch_size"]
-        self.maxlen = param["maxlen"]
-        self.label_size = param["label_size"]
+        self.batch_size = param.batch_size
+        self.maxlen = param.maxlen
+        self.label_size = param.label_size
 
         self.bert = bert.BERT(param)
 
@@ -41,15 +42,15 @@ class BERT_NER(tf.keras.Model):
 
 model = BERT_NER(param)
 
-model.build(input_shape=(3, param["batch_size"], param["maxlen"]))
+model.build(input_shape=(param.batch_size, param.maxlen))
 
 model.summary()
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
-writer = TFWriter(param["maxlen"], vocab_file,
-                    modes=["valid"], check_exist=True)
+writer = TFWriter(param.maxlen, vocab_file,
+                  modes=["valid"], check_exist=True)
 
-ner_load = TFLoader(param["maxlen"], param["batch_size"])
+ner_load = TFLoader(param.maxlen, param.batch_size)
 
 # Metrics
 f1score = Metric.SparseF1Score("macro")
@@ -79,6 +80,6 @@ print("f1:{}\tprecision:{}\trecall:{}\taccuracy:{}\n".format(np.mean(f1s),
                                                              np.mean(precisions),
                                                              np.mean(recalls),
                                                              np.mean(accuracys)))
-    # print("Sentence", writer.convert_id_to_vocab(tf.reshape(X,[-1]).numpy()))
-    #
-    # print("Label", writer.convert_id_to_label(tf.reshape(predict,[-1]).numpy()))
+# print("Sentence", writer.convert_id_to_vocab(tf.reshape(X,[-1]).numpy()))
+#
+# print("Label", writer.convert_id_to_label(tf.reshape(predict,[-1]).numpy()))

@@ -81,7 +81,7 @@ class LoadCheckpoint(object):
 
         if model in ["bert", "albert"]:
             self.url = url
-            size = self.getsize(self.url)
+            self.size = self.getsize(self.url)
             filename = url.split('/')[-1]
             if not os.path.exists(filename):
                 open(filename, 'w').close()
@@ -161,10 +161,10 @@ class LoadCheckpoint(object):
             bert_param.pop("pooler_type")
         if not pretraining and self.lg == 'en':
             pass
-        albert_param = dict_to_object(albert_param)
-        bert_param.batch_size = 0
-        bert_param.maxlen = 0
-        bert_param.label_size = 0
+        bert_param = dict_to_object(bert_param)
+        bert_param.batch_size = 10
+        bert_param.maxlen = 100
+        bert_param.label_size = 2
         return bert_param, vocab_file, model_path
 
     def load_albert_param(self, pretraining=False):
