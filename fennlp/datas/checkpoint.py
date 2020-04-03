@@ -78,6 +78,11 @@ class LoadCheckpoint(object):
                         os.mkdir("gpt_large")
                     self.gpt_base_dir = "gpt_large"
                     self.gpt_size = "762M"
+                elif paramaters == "xlarge":
+                    if not os.path.exists("gpt_xlarge"):
+                        os.mkdir("gpt_xlarge")
+                    self.gpt_base_dir = "gpt_xlarge"
+                    self.gpt_size = "1542M"
 
         if model in ["bert", "albert"]:
             self.url = url
@@ -87,7 +92,7 @@ class LoadCheckpoint(object):
                 open(filename, 'w').close()
             if os.path.getsize(filename) != self.size:
                 print("Download and unzip: {}".format(filename))
-                self.download(url, filename, size)
+                self.download(url, filename, self.size)
             if filename.endswith("zip"):
                 self.unzip(filename)
             elif filename.endswith('gz'):
@@ -96,14 +101,14 @@ class LoadCheckpoint(object):
             for filename in self.all_files:
                 self.url = "https://storage.googleapis.com/gpt-2/models/" + self.gpt_size + "/" + filename
                 # if not os.path.exists(self.gpt_base_dir):
-                size = self.getsize(self.url)
+                self.size = self.getsize(self.url)
                 if os.path.exists(os.path.join(self.gpt_base_dir, filename)):
-                    if os.path.getsize(os.path.join(self.gpt_base_dir, filename)) != size:
+                    if os.path.getsize(os.path.join(self.gpt_base_dir, filename)) != self.size:
                         print("\nFetching {} .....".format(filename))
-                        self.download(self.url, os.path.join(self.gpt_base_dir, filename), size)
+                        self.download(self.url, os.path.join(self.gpt_base_dir, filename), self.size)
                 else:
                     print("\nFetching {} .....".format(filename))
-                    self.download(self.url, os.path.join(self.gpt_base_dir, filename), size)
+                    self.download(self.url, os.path.join(self.gpt_base_dir, filename), self.size)
 
     def getsize(self, url):
         try:

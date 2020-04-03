@@ -13,7 +13,7 @@ version = tf.__version__
 Version_float = float('.'.join(version.split('.')[:2]))
 
 
-# For BERT
+# For BERT Albert GPT2
 def create_initializer(initializer_range=0.02):
     """Creates a `truncated_normal_initializer` with the given range."""
     # return tf.keras.initializers.get("truncated_normal")
@@ -102,28 +102,6 @@ def get_activation(activation_string):
         return tf.nn.tanh
     else:
         raise ValueError("Unsupport activation:%s" % act)
-
-
-def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
-    initialized_variable_names = {}
-    name_to_variable = collections.OrderedDict()
-    for var in tvars:
-        print(var.name)
-        name = var.name
-        m = re.match("^(.*):\\d+$", name)
-        if m is not None:
-            name = m.group(1)
-        name_to_variable[name] = var
-    init_vars = tf.train.list_variables(init_checkpoint)
-    assignment_map = collections.OrderedDict()
-    for x in init_vars:
-        (name, var) = (x[0], x[1])
-        if name not in name_to_variable:
-            continue
-        assignment_map[name] = name
-        initialized_variable_names[name] = 1
-        initialized_variable_names[name + ":0"] = 1
-    return (assignment_map, initialized_variable_names)
 
 
 def albert_init_weights_from_checkpoint(model, checkpoint_file, num_layer=12, pooler=False):
@@ -222,7 +200,6 @@ def bert_init_weights_from_checkpoint(model, checkpoint_file, num_layer, pooler=
     # weight = {name for name in weights}
     for i, var in enumerate(varname):
         print("INIT WEIGHTS {}".format(var), i)
-
     model.get_layer("bert").set_weights(weights)
     del weights
 
@@ -342,10 +319,11 @@ class MyDict(dict):
     __setattr__ = dict.__setitem__
     __getattr__ = dict.__getitem__
 
+
 def dict_to_object(dictObj):
     if not isinstance(dictObj, dict):
         return dictObj
-    inst=MyDict()
-    for k,v in dictObj.items():
-        inst[k] = dict_to_object(v)
+    inst = MyDict()
+    for k, v in dictObj.items():
+        inst[k] = dict_to_object(v)  # 解决嵌套字典问题
     return inst

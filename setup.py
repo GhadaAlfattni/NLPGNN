@@ -18,6 +18,7 @@ REQUIRED = [
     'gensim',
     'tqdm',
     'regex',
+    'scikit-learn',
     'sentencepiece'
 ]
 

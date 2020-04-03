@@ -103,10 +103,11 @@ class BatchNormalization(tf.keras.layers.Layer):
         pass
 
 
-class GPTNorm(tf.keras.layers.Layer):
-    def __init__(self, epsilon, name, **kwargs):
-        super(GPTNorm, self).__init__(name=name, **kwargs)
+class LayerNorm(tf.keras.layers.Layer):
+    def __init__(self, axis=-1, epsilon=1e-5, name=None, **kwargs):
+        super(LayerNorm, self).__init__(name=name, **kwargs)
         self.epsilon = epsilon
+        self.axis = axis
 
     def build(self, input_shape):
         n_state = input_shape[-1]
@@ -121,9 +122,22 @@ class GPTNorm(tf.keras.layers.Layer):
             name='b',
         )
 
-    def call(self, inputs, axis=-1):
-        u = tf.reduce_mean(inputs, axis=axis, keepdims=True)
-        s = tf.reduce_mean(tf.square(inputs - u), axis=axis, keepdims=True)
+    def call(self, inputs, ):
+        u = tf.reduce_mean(inputs, axis=self.axis, keepdims=True)
+        s = tf.reduce_mean(tf.square(inputs - u), axis=self.axis, keepdims=True)
         x = (inputs - u) * tf.math.rsqrt(s + self.epsilon)
         x = x * self.g + self.b
         return x
+
+
+if __name__ == "__main__":
+    x = tf.constant([[[0.1, 2.], [3., 0.06]], [[3., 0.04], [0.5, 8.]]])
+    y = LayerNorm(axis=-1, epsilon=1e-5)
+    ll = tf.keras.layers.LayerNormalization(axis=-1, epsilon=1e-5)
+    bb = tf.keras.layers.BatchNormalization(axis=-1, epsilon=1e-5)
+    op = ll(x)
+    print(op)
+    o = y(x)
+    print(o)
+    k=bb(x)
+    print(k)

@@ -11,7 +11,7 @@ from fennlp.tokenizers import gpt2_tokenization
 from fennlp.sample import samples
 
 # 载入参数
-load_check = LoadCheckpoint(langurage='en', model="gpt2", paramaters="medium")
+load_check = LoadCheckpoint(langurage='en', model="gpt2", paramaters="large")
 param, vocab_file, model_path, encoder_file = load_check.load_gpt2_param()
 print(param)
 
@@ -51,7 +51,7 @@ while True:
 
         out = samples.sample_sequence(model, param, length=100,
                                       context=context,
-                                      temperature=0.9,
+                                      temperature=1,
                                       top_k=40, top_p=1)[:, len(context_tokens):]
         for i in range(param.batch_size):
             generated += 1

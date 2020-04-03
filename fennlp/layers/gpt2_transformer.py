@@ -59,10 +59,10 @@ class GPT2Transformer(tf.keras.layers.Layer):
         self.resid_out_rate = resid_out_rate
 
     def build(self, input_shape):
-        # self.ln_1 = tf.keras.layers.LayerNormalization(epsilon=self.epsilon,
-        #                                                name='ln_1')
-        self.ln_1 = normalization.GPTNorm(epsilon=self.epsilon,
+        self.ln_1 = tf.keras.layers.LayerNormalization(epsilon=self.epsilon,
                                                        name='ln_1')
+        # self.ln_1 = normalization.GPTNorm(epsilon=self.epsilon,
+        #                                                name='ln_1')
         self.attn = GPTAttention(
             num_attention_heads=self.num_attention_heads,
             resid_out_rate=self.resid_out_rate,
@@ -71,10 +71,10 @@ class GPT2Transformer(tf.keras.layers.Layer):
             scale=True,
             name="attn")
 
-        # self.ln_2 = tf.keras.layers.LayerNormalization(epsilon=self.epsilon,
-        #                                                name='ln_2')
-        self.ln_2 = normalization.GPTNorm(epsilon=self.epsilon,
+        self.ln_2 = tf.keras.layers.LayerNormalization(epsilon=self.epsilon,
                                                        name='ln_2')
+        # self.ln_2 = normalization.GPTNorm(epsilon=self.epsilon,
+        #                                                name='ln_2')
         self.mlp = MLP(self.num_attention_heads, self.initializer_range,
                        self.resid_out_rate, name='mlp')
         self.built = True

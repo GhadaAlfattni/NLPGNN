@@ -67,9 +67,9 @@ class GPT2(tf.keras.layers.Layer):
             )
             self.encoder_layers.append(self.encoder_layer)
 
-        # self.ln_f = tf.keras.layers.LayerNormalization(epsilon=self.layer_norm_epsilon, name='ln_f')
+        self.ln_f = tf.keras.layers.LayerNormalization(epsilon=self.layer_norm_epsilon, name='ln_f')
 
-        self.ln_f = normalization.GPTNorm(epsilon=self.layer_norm_epsilon, name='ln_f')
+        # self.ln_f = normalization.GPTNorm(epsilon=self.layer_norm_epsilon, name='ln_f')
 
         self.built = True
 
