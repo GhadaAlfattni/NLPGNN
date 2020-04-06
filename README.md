@@ -75,12 +75,13 @@ git clone https://github.com/kyzhouhzau/fennlp.git
 ```
 2. install package
 ```
-python setup.py install
+python setup.py install 
 ```
 or 
 ```
-pip install fennlp
+pip install fennlp (Slower version update, not recommended at present)
 ```
+
 3. run model
 ```
 python bert_ner_train.py
@@ -90,7 +91,7 @@ python bert_ner_train.py
 
 ## Input
 * put train, valid and test file in "Input" dictionary.
-* data format: reference data in  "tests\NER\InputNER\train"
+* data format: reference data in  "tests\NER\Input\train"
 
     e.g. "拮 抗 RANKL 对 破 骨 细 胞 的 作 用 。	O O O O B-Anatomy I-Anatomy I-Anatomy E-Anatomy O O O O"
     
@@ -190,7 +191,7 @@ Using the default parameters, we get the following results on "中文糖尿病�
                  
 ## Input
 * put train, valid and test file in "Input" dictionary.
-* data format: reference data in "\tests\CLS\BERT( or TextCNN)\Input".
+* data format: reference data in "\tests\CLS\BERT( or ALBERT)\Input".
 
     e.g. "作 为 地 球 上 曾 经 最 强 的 拳 王 之 一 ， 小 克 里 琴 科 谈 自 己 是 否 会 复 出    2"
     
@@ -238,7 +239,7 @@ python train_text_cnn.py
 Use "WordPiece embedding" to Initialize word embedding. Train your embeddings.
 python train_bpe_embedding.py
 ```
-For more detail reference [WordPiece](https://mp.weixin.qq.com/s/Il8sh66TUCEPskbypDZLAg) 
+For more detail reference [WordPiece](https://mp.weixin.qq.com/s/Y6mCTqlf1yaTu99iKl-82Q) 
 
 
 Using the default parameters, we get the following results on "新闻标题短文本分类"  and SST-2 valid data.
@@ -287,32 +288,5 @@ Output >>> as stocks fall for the second consecutive week as investors flee for 
 "We don't know what the Fed's intent is on, what direction it's going in. We don't know where they plan to go. 
 We don't know what direction they're going to move into."
 
-
 ```
-
-
-
-
-# For GCN：
-
-## Input
-data format: see files in "tests/GCN/data/README.md" for more detail.
-
-
-```python
-from fennlp.models import GCN
-model = GCN.GCN2Layer()
-```
-
-```
-python train_gcn.py
-```
-
-
-
-
-
-
-
-
 
