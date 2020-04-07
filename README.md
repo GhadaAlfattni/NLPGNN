@@ -1,4 +1,4 @@
-# fennlp 0.0.5
+# fennlp 0.0.0
 
 [![Build Status](https://travis-ci.org/kyzhouhzau/fennlp.svg?branch=master)](https://travis-ci.org/kyzhouhzau/fennlp/branches)
 [![PyPI version](https://badge.fury.io/py/fennlp.svg)](https://badge.fury.io/py/fenlp)
