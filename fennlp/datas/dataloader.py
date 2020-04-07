@@ -1,10 +1,12 @@
+import codecs
+import collections
+import os
+import pickle
+
 import numpy as np
 import tensorflow as tf
-import os
-from fennlp.tokenizers import tokenization, albert_tokenization
-import collections
-import codecs
-import pickle
+
+from fennlp.tokenizers import tokenization
 
 
 class TFWriter(object):
@@ -12,16 +14,16 @@ class TFWriter(object):
                  check_exist=False, tokenizer="wordpiece", spm_model_file=None):
         self.maxlen = maxlen
         if tokenizer == "wordpiece":
-
-            self.fulltoknizer = tokenization.FullTokenizer(
+            self.fulltoknizer = tokenization.FullTokenizer.bert_scratch(
                 vocab_file=vocab_files, do_lower_case=do_low_case
             )
             self.convert_to_unicode = tokenization.convert_to_unicode
+
         elif tokenizer == "sentencepiece":
-            self.fulltoknizer = albert_tokenization.FullTokenizer.from_scratch(
+            self.fulltoknizer = tokenization.FullTokenizer.albert_scratch(
                 vocab_file=vocab_files, do_lower_case=do_low_case, spm_model_file=spm_model_file
             )
-            self.convert_to_unicode = albert_tokenization.convert_to_unicode
+            self.convert_to_unicode = tokenization.convert_to_unicode
 
         for mode in modes:
             self.mode = mode
@@ -165,7 +167,7 @@ class TFWriter(object):
             line = rf.readline()
             embed = int(line.strip().split()[-1])
             if embedding_size != embed:
-                print(embedding_size,embed)
+                print(embedding_size, embed)
                 raise ValueError("embedding_size must equal word2vec size!")
             for line in rf:
                 lines = line.strip().split()

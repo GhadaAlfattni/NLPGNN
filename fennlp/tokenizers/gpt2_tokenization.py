@@ -5,12 +5,11 @@ https://github.com/ConnorJL/GPT2/blob/master/models/gpt2/encoder.py
 """
 """Byte pair encoding utilities"""
 
-import regex as re
-import json
 import codecs
+import json
 from functools import lru_cache
 
-import tensorflow as tf
+import regex as re
 
 
 @lru_cache()
@@ -128,20 +127,3 @@ class FullTokenizer:
     def convert_token_to_id(self, token):  # encoder
         return self.encoder.get(token, self.encoder.get("<|endoftext|>"))
 
-
-if __name__ == "__main__":
-    encoder_file = r"C:\Users\Administrator\Desktop\fennlp\tests\TG\EN\gpt_base\encoder.json"
-    vocab_file = r"C:\Users\Administrator\Desktop\fennlp\tests\TG\EN\gpt_base\vocab.bpe"
-
-    tokenizer = FullTokenizer(encoder_file, vocab_file)
-    tokens = tokenizer.tokenize("my name is, i'm so happy at such a sunny day! <|endoftext|>")
-    # x = tokenizer.convert_tokens_to_string(tokens)
-    print([tokenizer.convert_token_to_id(i) for i in tokens])
-    print([tokenizer.convert_token_to_id("<|endoftext|>")])
-    print(tokens)
-    print(tokenizer.convert_id_to_token(4222))
-
-    print(tokenizer.convert_tokens_to_string(
-        [1820 , 1438 ,  318,   479 ,  320,   422  , 262 ,  278  , 416,  1097  ,  12 , 2652,
-         642  , 377 ,11732  , 277 ,   30  , 685  ,3451   ,470  , 764  , 527   ,  0 ,  836,
-         509  ,7977,   291  ,1875,    13   ,428 , 1439    ,11 , 1222  ,1462  ,6469]))

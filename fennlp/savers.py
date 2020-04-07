@@ -13,9 +13,8 @@ class CheckpointSaver:
              save_format=None,
              signatures=None,
              options=None):
-        if self.old_metric_score<metric_score:
+        if self.old_metric_score < metric_score:
             path = self.checkpoint.save(filepath, overwrite, include_optimizer,
-                                    save_format, signatures, options)
+                                        save_format, signatures, options)
             self.old_metric_score = metric_score
             print("Saving Model in {}".format(path))
-
