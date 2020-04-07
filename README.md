@@ -179,6 +179,7 @@ _________________________________________________________________
 
 Using the default parameters, we get the following results on "中文糖尿病标注数据集" and "CoNLL-2003" valid data.
 
+
 |model    | macro-F1| macro-P| macro-R|  lr    |epoch   |maxlen  |batch_size| data|
 | ------- |  -------| -------| -------| ------- |------- |------- |------- |-------   |
 | bert+base+crf| -       | -      | -      | -       |-       |    -   |  -   |中文糖尿病标注数据集    |
