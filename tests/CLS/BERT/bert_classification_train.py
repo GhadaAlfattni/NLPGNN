@@ -1,12 +1,19 @@
 import tensorflow as tf
+
+from fennlp.datas.checkpoint import LoadCheckpoint
+from fennlp.datas.dataloader import TFWriter, TFLoader
+from fennlp.metrics import Metric
 from fennlp.models import bert
 from fennlp.optimizers import optim
 from fennlp.tools import bert_init_weights_from_checkpoint
-from fennlp.datas.checkpoint import LoadCheckpoint
-from fennlp.datas.dataloader import TFWriter, TFLoader
-from fennlp.metrics import Metric, Losess
 
 # 载入参数
+# LoadCheckpoint(language='zh', model="bert", parameters="base", cased=True, url=None)
+# language: the language you used in your input data
+# model: the model you choose,could be bert albert and gpt2
+# parameters: can be base large xlarge xxlarge for albert, base medium large for gpt2, base large for BERT.
+# cased: True or false, only for bert model.
+# url: you can give a link of other checkpoint.
 load_check = LoadCheckpoint()
 param, vocab_file, model_path = load_check.load_bert_param()
 

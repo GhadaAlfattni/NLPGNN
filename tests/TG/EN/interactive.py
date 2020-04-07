@@ -11,7 +11,13 @@ from fennlp.tokenizers import gpt2_tokenization
 from fennlp.sample import samples
 
 # 载入参数
-load_check = LoadCheckpoint(langurage='en', model="gpt2", paramaters="large")
+# LoadCheckpoint(language='zh', model="bert", parameters="base", cased=True, url=None)
+# language: the language you used in your input data
+# model: the model you choose,could be bert albert and gpt2
+# parameters: can be base large xlarge xxlarge for albert, base medium large for gpt2, base large for BERT.
+# cased: True or false, only for bert model.
+# url: you can give a link of other checkpoint.
+load_check = LoadCheckpoint(language='en', model="gpt2", parameters="medium")
 param, vocab_file, model_path, encoder_file = load_check.load_gpt2_param()
 print(param)
 

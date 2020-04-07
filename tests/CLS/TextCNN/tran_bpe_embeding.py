@@ -3,8 +3,9 @@
 """
 @Author:Kaiyin Zhou
 """
-from fennlp.bpemd import bpe
 from gensim.models import Word2Vec
+
+from fennlp.bpemd import bpe
 
 # you can also use the corpus you have processed and set corpus ="yourfile"
 # if don't use yourself corpus, you can download wiki data from
@@ -19,7 +20,7 @@ vocab = "./corpus/zh_vocab.txt"  # here vocab file could download from bert
 
 traniner = bpe.BPE(corpus=corpus,
                    vocab_files=vocab,
-                   langurage='zh')
+                   language='zh')
 
 traniner.train_word2vec(embed_size=100,
                         window_size=5,

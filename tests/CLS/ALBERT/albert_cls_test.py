@@ -1,12 +1,13 @@
 import numpy as np
 import tensorflow as tf
-from fennlp.models import albert
+
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric
+from fennlp.models import albert
 
 # 载入参数
-load_check = LoadCheckpoint(langurage='en', model="albert", paramaters="base")
+load_check = LoadCheckpoint(language='en', model="albert", paramaters="base")
 param, vocab_file, model_path, spm_model_file = load_check.load_albert_param()
 # 定制参数
 param.batch_size = 8

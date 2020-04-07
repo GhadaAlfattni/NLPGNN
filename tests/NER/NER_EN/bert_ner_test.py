@@ -1,11 +1,13 @@
+import numpy as np
 import tensorflow as tf
-from fennlp.models import bert
+
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric
-import numpy as np
+from fennlp.models import bert
+
 # 载入参数
-load_check = LoadCheckpoint(langurage='en')
+load_check = LoadCheckpoint(language='en')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数

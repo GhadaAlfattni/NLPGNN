@@ -1,13 +1,20 @@
 import tensorflow as tf
+
+from fennlp.datas.checkpoint import LoadCheckpoint
+from fennlp.datas.dataloader import TFWriter, TFLoader
+from fennlp.metrics import Metric
 from fennlp.models import bert
 from fennlp.optimizers import optim
 from fennlp.tools import bert_init_weights_from_checkpoint
-from fennlp.datas.checkpoint import LoadCheckpoint
-from fennlp.datas.dataloader import TFWriter, TFLoader
-from fennlp.metrics import Metric, Losess
 
 # 载入参数
-load_check = LoadCheckpoint(langurage='zh')
+# LoadCheckpoint(language='zh', model="bert", parameters="base", cased=True, url=None)
+# language: the language you used in your input data
+# model: the model you choose,could be bert albert and gpt2
+# parameters: can be base large xlarge xxlarge for albert, base medium large for gpt2, base large for BERT.
+# cased: True or false, only for bert model.
+# url: you can give a link of other checkpoint.
+load_check = LoadCheckpoint(language='zh')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
@@ -41,7 +48,7 @@ class BERT_NER(tf.keras.Model):
 
 model = BERT_NER(param)
 
-model.build(input_shape=(3,param.batch_size, param.maxlen))
+model.build(input_shape=(3, param.batch_size, param.maxlen))
 
 model.summary()
 
@@ -55,13 +62,13 @@ optimizer_bert = optim.AdamWarmup(learning_rate=2e-5,  # 重要参数
 sparse_categotical_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
 # 初始化参数
 bert_init_weights_from_checkpoint(model,
-                             model_path,
-                             param.num_hidden_layers,
-                             pooler=False)
+                                  model_path,
+                                  param.num_hidden_layers,
+                                  pooler=False)
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = TFWriter(param.maxlen, vocab_file,
-                    modes=["train"], check_exist=False)
+                  modes=["train"], check_exist=False)
 
 ner_load = TFLoader(param.maxlen, param.batch_size, epoch=5)
 

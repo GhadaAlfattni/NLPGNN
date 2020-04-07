@@ -3,27 +3,29 @@
 """
 @Author:Kaiyin Zhou
 """
-from fennlp.tokenizers import tokenization
-from gensim.corpora.wikicorpus import extract_pages, filter_wiki
-import bz2file
-import os
-import re
 import codecs
-from tqdm import tqdm
 import logging
 import multiprocessing
+import os
+import re
+
+import bz2file
+from gensim.corpora.wikicorpus import extract_pages, filter_wiki
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
+from tqdm import tqdm
+
+from fennlp.tokenizers import tokenization
 
 
 class BPE(object):
-    def __init__(self,corpus, vocab_files,langurage='zh', do_low_case=True):
+    def __init__(self,corpus, vocab_files,language='zh', do_low_case=True):
         self.corpus = corpus
         self.fulltoknizer = tokenization.FullTokenizer(
             vocab_file=vocab_files, do_lower_case=do_low_case
         )
         if os.path.basename(corpus).endswith(".bz2"):
-            self.wiki_bz_process(langurage)
+            self.wiki_bz_process(language)
         else:
             pass
         self.corpus = os.path.join(os.path.dirname(self.corpus), 'wiki.txt')
@@ -31,12 +33,12 @@ class BPE(object):
             self.process_corpus()
         self.processed = os.path.join(os.path.dirname(self.corpus), "pre_" + os.path.basename(self.corpus))
 
-    def wiki_bz_process(self,langurage):
+    def wiki_bz_process(self,language):
         wiki = extract_pages(bz2file.open(self.corpus))
         f = codecs.open(os.path.join(os.path.dirname(self.corpus), 'wiki.txt'),
                         'w', encoding='utf-8')
         w = tqdm(wiki, desc="Currently get 0 files!")
-        if langurage=='zh':
+        if language=='zh':
             for i, d in enumerate(w):
                 if not re.findall('^[a-zA-Z]+:', d[0]) and not re.findall(u'^#', d[1]):
                     s = self.wiki_replace(d)
@@ -44,7 +46,7 @@ class BPE(object):
                     i += 1
                     if i % 100 == 0:
                         w.set_description('Currently got %s files' % i)
-        elif langurage=='en':
+        elif language=='en':
             pass
 
     def wiki_replace(self, d):

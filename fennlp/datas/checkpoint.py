@@ -1,36 +1,40 @@
 #!encoding:utf-8
-import requests
-import sys
-import zipfile
-import tarfile
-import os
 import json
+import os
+import sys
+import tarfile
+import zipfile
+
+import requests
+
 from fennlp.tools import dict_to_object
 
+
 class LoadCheckpoint(object):
-    def __init__(self, langurage='zh', model="bert",
-                 paramaters="base", cased=True, url=None):
+    
+    def __init__(self, language='zh', model="bert",
+                 parameters="base", cased=True, url=None):
         """
-        :param langurage: what kind of langurage you will processing
+        :param language: what kind of language you will processing
         :param model: bert or albert
-        :param paramaters: could choose base large for bert base large xlarge xxlarge for albert
+        :param parameters: could choose base large for bert base large xlarge xxlarge for albert
         :param cased: use cased of uncased checkpoint
         :param url: your own checkpoint
         """
-        self.lg = langurage
+        self.lg = language
         if model == "bert":
-            if langurage == "zh":
+            if language == "zh":
                 url = "https://storage.googleapis.com/bert_models/" \
                       "2018_11_03/chinese_L-12_H-768_A-12.zip"
-            elif langurage == "en":
-                if paramaters == "base":
+            elif language == "en":
+                if parameters == "base":
                     if cased:
                         url = "https://storage.googleapis.com/bert_models/" \
                               "2018_10_18/cased_L-12_H-768_A-12.zip"
                     else:
                         url = "https://storage.googleapis.com/bert_models/" \
                               "2018_10_18/uncased_L-12_H-768_A-12.zip"
-                elif paramaters == "large":
+                elif parameters == "large":
                     if cased:
                         url = "https://storage.googleapis.com/bert_models/" \
                               "2018_10_18/cased_L-24_H-1024_A-16.zip"
@@ -42,19 +46,19 @@ class LoadCheckpoint(object):
                     url = url
 
         elif model == "albert":
-            if langurage == "en":
-                if paramaters == "base":
+            if language == "en":
+                if parameters == "base":
                     url = "https://storage.googleapis.com/albert_models/albert_base_v2.tar.gz"
-                elif paramaters == "large":
+                elif parameters == "large":
                     url = "https://storage.googleapis.com/albert_models/albert_large_v2.tar.gz"
-                elif paramaters == "xlarge":
+                elif parameters == "xlarge":
                     url = "https://storage.googleapis.com/albert_models/albert_xlarge_v2.tar.gz"
-                elif paramaters == "xxlarge":
+                elif parameters == "xxlarge":
                     url = "https://storage.googleapis.com/albert_models/albert_xxlarge_v2.tar.gz"
                 else:
                     raise ValueError("Other models still not support!")
 
-            elif langurage == "zh":
+            elif language == "zh":
                 raise ValueError("Currently not support load chinese model!")
 
         elif model == "gpt2":
@@ -62,23 +66,23 @@ class LoadCheckpoint(object):
                               'model.ckpt.index', 'model.ckpt.meta', 'vocab.bpe']
             self.base_dir = ""
             self.size = 0
-            if langurage == "en":
-                if paramaters == "base":
+            if language == "en":
+                if parameters == "base":
                     if not os.path.exists("gpt_base"):
                         os.mkdir("gpt_base")
                     self.gpt_base_dir = "gpt_base"
                     self.gpt_size = "117M"
-                elif paramaters == "medium":
+                elif parameters == "medium":
                     if not os.path.exists("gpt_medium"):
                         os.mkdir("gpt_medium")
                     self.gpt_base_dir = "gpt_medium"
                     self.gpt_size = "345M"
-                elif paramaters == "large":
+                elif parameters == "large":
                     if not os.path.exists("gpt_large"):
                         os.mkdir("gpt_large")
                     self.gpt_base_dir = "gpt_large"
                     self.gpt_size = "762M"
-                elif paramaters == "xlarge":
+                elif parameters == "xlarge":
                     if not os.path.exists("gpt_xlarge"):
                         os.mkdir("gpt_xlarge")
                     self.gpt_base_dir = "gpt_xlarge"

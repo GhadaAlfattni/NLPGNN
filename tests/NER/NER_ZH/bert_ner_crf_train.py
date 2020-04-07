@@ -1,20 +1,28 @@
 import tensorflow as tf
-from fennlp.models import bert
-from fennlp.optimizers import optim
-from fennlp.tools import bert_init_weights_from_checkpoint
+
 from fennlp.datas.checkpoint import LoadCheckpoint
 from fennlp.datas.dataloader import TFWriter, TFLoader
 from fennlp.metrics import Metric
 from fennlp.metrics.crf import CrfLogLikelihood
+from fennlp.models import bert
+from fennlp.optimizers import optim
+from fennlp.tools import bert_init_weights_from_checkpoint
 
 # 载入参数
-load_check = LoadCheckpoint(langurage='zh')
+# LoadCheckpoint(language='zh', model="bert", parameters="base", cased=True, url=None)
+# language: the language you used in your input data
+# model: the model you choose,could be bert albert and gpt2
+# parameters: can be base large xlarge xxlarge for albert, base medium large for gpt2, base large for BERT.
+# cased: True or false, only for bert model.
+# url: you can give a link of other checkpoint.
+load_check = LoadCheckpoint(language='zh')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
 param.batch_size = 8
 param.maxlen = 10
 param.label_size = 46
+
 
 # 构建模型
 class BERT_NER(tf.keras.Model):
@@ -29,7 +37,7 @@ class BERT_NER(tf.keras.Model):
 
     def call(self, inputs, is_training=True):
         # 数据切分
-        input_ids, token_type_ids, input_mask,Y = tf.split(inputs, 4, 0)
+        input_ids, token_type_ids, input_mask, Y = tf.split(inputs, 4, 0)
         input_ids = tf.cast(tf.squeeze(input_ids, axis=0), tf.int64)
         token_type_ids = tf.cast(tf.squeeze(token_type_ids, axis=0), tf.int64)
         input_mask = tf.cast(tf.squeeze(input_mask, axis=0), tf.int64)
@@ -43,11 +51,11 @@ class BERT_NER(tf.keras.Model):
         log_likelihood, transition = self.crf(predict, Y, sequence_lengths=tf.reduce_sum(input_mask, 1))
         loss = tf.math.reduce_mean(-log_likelihood)
         predict, viterbi_score = self.crf.crf_decode(predict, transition,
-                                                         sequence_length=tf.reduce_sum(input_mask, 1))
-        return loss,predict
+                                                     sequence_length=tf.reduce_sum(input_mask, 1))
+        return loss, predict
 
     def predict(self, inputs, is_training=False):
-        loss,predict = self(inputs, is_training)
+        loss, predict = self(inputs, is_training)
         return predict
 
 
@@ -63,19 +71,19 @@ optimizer_bert = optim.AdamWarmup(learning_rate=2e-5,  # 重要参数
                                   decay_steps=10000,  # 重要参数
                                   warmup_steps=1000, )
 optimizer_crf = optim.AdamWarmup(learning_rate=1e-3,
-                                decay_steps = 10000,  # 重要参数
-                                warmup_steps = 1000,
-                                )
+                                 decay_steps=10000,  # 重要参数
+                                 warmup_steps=1000,
+                                 )
 #
 # 初始化参数
 bert_init_weights_from_checkpoint(model,
-                             model_path,
-                             param.num_hidden_layers,
-                             pooler=False)
+                                  model_path,
+                                  param.num_hidden_layers,
+                                  pooler=False)
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = TFWriter(param.maxlen, vocab_file,
-                    modes=["train"], check_exist=False)
+                  modes=["train"], check_exist=False)
 
 ner_load = TFLoader(param.maxlen, param.batch_size, epoch=5)
 
@@ -98,7 +106,7 @@ manager = tf.train.CheckpointManager(checkpoint, directory="./save",
 Batch = 0
 for X, token_type_id, input_mask, Y in ner_load.load_train():
     with tf.GradientTape(persistent=True) as tape:
-        loss,predict = model([X, token_type_id, input_mask,Y])
+        loss, predict = model([X, token_type_id, input_mask, Y])
 
         f1 = f1score(Y, predict)
         precision = precsionscore(Y, predict)
@@ -119,8 +127,8 @@ for X, token_type_id, input_mask, Y in ner_load.load_train():
             tf.summary.scalar("precision", precision, step=Batch)
             tf.summary.scalar("recall", recall, step=Batch)
 
-    grads_bert = tape.gradient(loss, model.bert.variables+model.dense.variables)
+    grads_bert = tape.gradient(loss, model.bert.variables + model.dense.variables)
     grads_crf = tape.gradient(loss, model.crf.variables)
-    optimizer_bert.apply_gradients(grads_and_vars=zip(grads_bert, model.bert.variables+model.dense.variables))
+    optimizer_bert.apply_gradients(grads_and_vars=zip(grads_bert, model.bert.variables + model.dense.variables))
     optimizer_crf.apply_gradients(grads_and_vars=zip(grads_crf, model.crf.variables))
     Batch += 1

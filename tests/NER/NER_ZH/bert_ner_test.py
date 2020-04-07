@@ -7,7 +7,7 @@ from fennlp.metrics import Metric
 from fennlp.models import bert
 
 # 载入参数
-load_check = LoadCheckpoint(langurage='zh')
+load_check = LoadCheckpoint(language='zh')
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
