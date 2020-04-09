@@ -75,12 +75,19 @@ class AdamWarmup(tf.keras.optimizers.Optimizer):
         power = self._get_hyper('power', var_dtype)
 
         # Warmup + 多项式损失
-        if global_step <= warmup_steps and warmup_steps > 0:
-            lr_t = self.learning_rate * (global_step / warmup_steps)
-        else:
-            if decay_steps > 0:
-                lr_t = end_learning_rate + (lr_t - end_learning_rate) * \
-                       (1.0 - tf.minimum(global_step, decay_steps) / decay_steps) ** (power)
+        # if global_step <= warmup_steps and warmup_steps > 0:
+        #     lr_t = self.learning_rate * (global_step / warmup_steps)
+        # else:
+        #     if decay_steps > 0:
+        #         lr_t = end_learning_rate + (lr_t - end_learning_rate) * \
+        #                (1.0 - tf.minimum(global_step, decay_steps) / decay_steps) ** (power)
+
+        # Warmup + 多项式损失 (use tf.function)
+        lr_t = tf.where(
+            global_step <= warmup_steps,
+            lr_t * (global_step / warmup_steps),
+            end_learning_rate + (lr_t - end_learning_rate) * (1.0 - tf.minimum(global_step, decay_steps) / decay_steps) ** (power),
+        )
 
         if indices is None:
             # update 与 state_ops.assign(x,new_x)相同均是赋值含义
@@ -102,15 +109,15 @@ class AdamWarmup(tf.keras.optimizers.Optimizer):
             var_t = m_t / (tf.keras.backend.sqrt(v_t) + epsilon_t)
 
             # weight decay
-            if self.weight_decay_rate > 0.0:
-                weight_decay_rate = self._get_hyper('weight_decay_rate', var_dtype)
-                if self.weight_decay_pattern is None:
-                    var_t += weight_decay_rate * var
-                else:
-                    for pattern in self.weight_decay_pattern:
-                        if pattern in var.name:
-                            var_t += weight_decay_rate * var
-                            break
+            # if self.weight_decay_rate > 0.0:
+            weight_decay_rate = self._get_hyper('weight_decay_rate', var_dtype)
+            if self.weight_decay_pattern is None:
+                var_t += weight_decay_rate * var
+            else:
+                for pattern in self.weight_decay_pattern:
+                    if pattern in var.name:
+                        var_t += weight_decay_rate * var
+                        break
             var_t = var - lr_t * var_t
             return tf.keras.backend.update(var, var_t)
 
