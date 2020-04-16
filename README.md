@@ -300,7 +300,7 @@ useage:
 ```
  tensorboard --port 6006 --logdir="./tensorboard"
 ```
-![loss](picture/loss.png) ![acc](picture/acc.png)
+![loss](picture/loss1.png) ![acc](picture/acc1.png)
 
 
 
