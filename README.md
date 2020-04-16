@@ -37,6 +37,8 @@ Examples (See tests for more details):
 All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
 # Status
+2020/4/16：Currently focusing on models of GNN in nlp, and trying to integrate some GNN models into fennlp.
+
 2020/4/2: add GPT2 model, could used parameters released by OpenAI (base,medium,large). 
 More detail reference dictionary "TG/EN/interactive.py"
 
