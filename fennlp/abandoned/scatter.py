@@ -4,7 +4,6 @@
 @Author:Kaiyin Zhou
 """
 import tensorflow as tf
-import numpy as np
 
 
 def broadcast(src, other, dim: int):

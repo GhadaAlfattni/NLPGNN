@@ -1,93 +1,93 @@
-#! encoding="utf-8"
+#! usr/bin/env python3
+# -*- coding:utf-8 -*-
+"""
+@Author:Kaiyin Zhou
+Usage:
+node_embeddings = tf.random.normal(shape=(5, 3))
+adjacency_lists = [tf.constant([[0, 1], [2, 4], [2, 4]], dtype=tf.int32)]
+layer = RGraphConvolution(out_features=12)
+x = layer(GNNInput(node_embeddings, adjacency_lists), training=True)
+"""
 import tensorflow as tf
 
+from fennlp.gnn.messagepassing import MessagePassing
 
-class RelationalGraphConvolution(tf.keras.layers.Layer):
-    def __init__(self, output_dim,
-                 num_relations,
-                 num_bases,
-                 activation='linear',
-                 kernel_initializer=None,
-                 bias_initializer=None,
-                 kernel_regularizer=None,
-                 bias_regularizer=None,
+
+class RGraphConvolution(MessagePassing):
+    def __init__(self,
+                 out_features,
+                 epsion=1e-7,
+                 aggr="sum",
+                 normalize=True,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
                  use_bias=True,
+                 name=None,
                  **kwargs):
-        super(RelationalGraphConvolution, self).__init__(self, **kwargs)
-
+        super(RGraphConvolution, self).__init__(aggr, name, **kwargs)
         self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
         self.bias_initializer = tf.keras.initializers.get(bias_initializer)
-        self.kernel_regularizer = tf.keras.regularizers.get(kernel_regularizer)
-        self.bias_regularizer = tf.keras.regularizers.get(bias_regularizer)
-        self.activation = tf.keras.activations.get(activation)
         self.use_bias = use_bias
-        self.output_dim = output_dim
-        self.num_relations = num_relations
-        self.num_bases = num_bases
+        self.normalize = normalize
+        self.out_features = out_features
+        self.epsion = epsion
 
-    def build(self, input_shape):
-        self.in_features = input_shape[1]
-        # V_b   [B,in_dim,out_dim]
-        self.basis = self.add_weight(
-            shape=(self.num_bases, self.in_features, self.output_dim),
-            name='basis',
-        )
-
-        self.att = self.add_weight(
-            shape=(self.num_relations, self.num_bases),
-            name='kernel',
-        )
-        # W_0^l
-        self.weight = self.add_weight(
-            shape=(self.in_features, self.output_dim),
-            initializer=self.kernel_initializer,
-            regularizer=self.kernel_regularizer,
-            name='kernel',
-        )
-        # bias
+    def build(self, input_shapes):
+        node_embedding_shapes = input_shapes.node_embeddings
+        adjacency_list_shapes = input_shapes.adjacency_lists
+        num_edge_type = len(adjacency_list_shapes)
+        in_features = node_embedding_shapes[-1]
+        self._edge_type_weights = []
+        self._edge_type_bias = []
+        for i in range(num_edge_type):
+            weight = self.add_weight(
+                shape=(in_features, self.out_features),
+                initializer=self.kernel_initializer,
+                name='wt',
+            )
+            self._edge_type_weights.append(weight)
         if self.use_bias:
             self.bias = self.add_weight(
-                shape=(self.output_dim,),
+                shape=(self.out_features),
                 initializer=self.bias_initializer,
-                regularizer=self.bias_regularizer,
-                name='bias',
+                name='b',
             )
-
-    def message(self, x_j, edge_index_j, edge_type, edge_norm):
-        # wr [R,in_dim*out_dim]
-        wr = tf.linalg.matmul(self.att, tf.reshape(self.basis, (self.num_bases, -1)))
-
-        if x_j is None:
-            # wr [R*in_dm, out_dim]
-            wr = tf.reshape(wr, (-1, self.output_dim))
-            index = edge_type * self.in_features + edge_index_j
-            output = tf.gather(wr, index)
         else:
-            wr = tf.reshape(wr, (self.num_relations, -1, self.output_dim))
-            wr = tf.gather(wr, tf.cast(edge_type, tf.int64))
-            print(wr)
-            output = tf.linalg.matmul(tf.expand_dims(x_j, 1), wr)
-            output = tf.squeeze(output, -2)
-        return output if edge_norm is None else output * tf.reshape(edge_norm, (-1, 1))
+            self.bias = None
 
-    def aggregate(self, outputs):
-        return tf.reduce_mean(outputs)
+        self.weight_o = self.add_weight(
+            shape=(in_features, self.out_features),
+            initializer=self.kernel_initializer,
+            name='wo',
+        )
+        self.built = True
 
-    def call(self, x, edge_index, edge_type, edge_norm):
+    def message_function(self, edge_source_states,
+                         edge_target_states,
+                         num_incoming_to_node_per_message,
+                         num_outing_to_node_per_message,
+                         edge_type_idx):
         """
-        :param x: entity
-        :param edge_index: edge_index
-        :param edge_type: edge_type
-        :param edge_norm:edge_norm
+        :param edge_source_states: [M,H]
+        :param edge_target_states: [M,H]
+        :param num_incoming_to_node_per_message:[M]
+        :param edge_type_idx:
+        :param training:
         :return:
         """
-        output = self.message(x, edge_index, edge_type, edge_norm)
-        # TODO
-        aggr_out = self.aggregate(output)
-        if x is None:
-            output = aggr_out + self.weight
-        else:
-            output = aggr_out + tf.linalg.matmul(x, self.weight)
-        if self.use_biase:
-            output += self.bias
-        return output
+        weight_r = self._edge_type_weights[edge_type_idx]
+        messages = tf.linalg.matmul(edge_source_states, weight_r)
+        if self.normalize:
+            messages = (
+                    tf.expand_dims(1.0 / (tf.cast(num_incoming_to_node_per_message,
+                                                  tf.float32) + self.epsion), axis=-1) * messages
+            )
+        return messages
+
+    def call(self, inputs):
+        aggr_out = self.propagate(inputs)# message_passing + update
+        aggr_out += tf.linalg.matmul(inputs.node_embeddings, self.weight_o)
+        if self.bias is not None:
+            aggr_out += self.bias
+        return aggr_out
+

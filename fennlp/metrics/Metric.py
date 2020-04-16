@@ -14,15 +14,16 @@
 # ==============================================================================
 """Implements F scores."""
 
-import tensorflow as tf
-from typeguard import typechecked
-from sklearn.metrics import classification_report, recall_score, precision_score, f1_score, accuracy_score
+import warnings
 from collections import defaultdict
-from .type import AcceptableDTypes, FloatTensorLike
 from typing import Optional
 
-import warnings
 import numpy as np
+import tensorflow as tf
+from sklearn.metrics import classification_report, recall_score, precision_score, f1_score, accuracy_score
+from typeguard import typechecked
+
+from .type import AcceptableDTypes, FloatTensorLike
 
 warnings.filterwarnings('ignore')
 
@@ -313,6 +314,16 @@ class SparseAccuracy(object):
             y_predict = tf.reshape(tf.argmax(y_predict, -1), [-1]).numpy()
         acc = accuracy_score(y_true, y_predict)
         return acc
+
+
+class MaskAccuracy():
+    def __call__(self, labels, preds, mask=None):
+        correct_prediction = tf.equal(tf.argmax(preds, 1), tf.argmax(labels, 1))
+        accuracy_all = tf.cast(correct_prediction, tf.float32)
+        mask = tf.cast(mask, dtype=tf.float32)
+        mask /= tf.reduce_mean(mask)
+        accuracy_all *= mask
+        return tf.reduce_mean(accuracy_all)
 
 
 class HitN_MR_MRR():

@@ -1,53 +1,53 @@
 #! encoding:utf-8
+import time
+
 import tensorflow as tf
+
 from fennlp.datas import graphloader
-from fennlp.models import GCN
-from fennlp.optimizers import optim
 from fennlp.metrics import Losess, Metric
+from fennlp.models import GCN
 
-_HIDDEN_DIM = 64
-_NUM_CLASS = 7
-_DROP_OUT_RATE = 0.5
-_EPOCH = 100
+hidden_dim = 16
+num_class = 7
+drop_rate = 0.5
+epoch = 200
+early_stopping = 10
 
-loader = graphloader.GCNLoader()
-features, adj, labels, idx_train, idx_val, idx_test = loader.load()
+loader = graphloader.GCNLoader("cora")
+adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask = loader.load()
 
-model = GCN.GCN2Layer(_HIDDEN_DIM, _NUM_CLASS, _DROP_OUT_RATE)
+model = GCN.GCNLayer(hidden_dim, num_class, drop_rate)
 
 optimizer = tf.keras.optimizers.Adam(0.01)
 
-crossentropy = Losess.MaskSparseCategoricalCrossentropy(from_logits=False)
-accscore = Metric.SparseAccuracy()
-f1score = Metric.SparseF1Score(average="macro")
+crossentropy = Losess.MaskCategoricalCrossentropy(use_mask=True)
+accscore = Metric.MaskAccuracy()
 # ---------------------------------------------------------
 # For train
-for epoch in range(_EPOCH):
+wait = 0
+best_see_loss = 9999
+t = time.time()
+for epoch in range(epoch):
     with tf.GradientTape() as tape:
-        output = model(features, adj, training=True)
-        predict = tf.gather(output, list(idx_train))
-        label = tf.gather(labels, list(idx_train))
-        loss = crossentropy(label, predict, use_mask=False)
-        acc = accscore(label, predict)
-        f1 = f1score(label, predict)
-        print("Epoch {} | Loss {:.4f} | Acc {:.4f} | F1 {:.4f}".format(epoch, loss.numpy(), acc,f1))
+        predict = model(features, adj, training=True)
+        loss = crossentropy(y_train, predict, train_mask)
+        #
+        predict_v = model.predict(features, adj)
+        see_loss = crossentropy(y_val, predict_v, val_mask)
+        if see_loss < best_see_loss:
+            best_see_loss = see_loss
+        else:
+            if wait >= early_stopping:
+                print('Epoch {}: early stopping'.format(epoch))
+                break
+            wait += 1
+        acc = accscore(y_val, predict, val_mask)
+        print("Epoch {} | Loss {:.4f} | Acc {:.4f} | Time {:.0f}".format(epoch, see_loss.numpy(), acc, time.time() - t))
     grads = tape.gradient(loss, model.variables)
     optimizer.apply_gradients(grads_and_vars=zip(grads, model.variables))
 # ------------------------------------------------------
-# For Valid
-output = model.predict(features, adj)
-predict = tf.gather(output, list(idx_val))
-label = tf.gather(labels, list(idx_val))
-acc = accscore(label, predict)
-f1 = f1score(label, predict)
-loss = crossentropy(label, predict, use_mask=False)
-print("Valid Loss {:.4f} | ACC {:.4f} | F1 {:.4f}".format(loss.numpy(), acc,f1))
-
 # For test
 output = model.predict(features, adj)
-predict = tf.gather(output, list(idx_test))
-label = tf.gather(labels, list(idx_test))
-acc = accscore(label, predict)
-f1 = f1score(label, predict)
-loss = crossentropy(label, predict, use_mask=False)
-print("Test Loss {:.4f} | ACC {:.4f} | F1 {:.4f}".format(loss.numpy(), acc,f1))
+acc = accscore(y_test, predict, test_mask)
+loss = crossentropy(y_test, predict, test_mask)
+print("Test Loss {:.4f} | ACC {:.4f} | Time {:.0f}".format(loss.numpy(), acc, time.time() - t))

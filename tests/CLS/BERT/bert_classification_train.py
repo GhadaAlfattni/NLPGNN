@@ -18,8 +18,8 @@ load_check = LoadCheckpoint()
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param.batch_size = 6
-param.maxlen = 10
+param.batch_size = 2
+param.maxlen = 4
 param.label_size = 15
 
 
@@ -68,7 +68,7 @@ bert_init_weights_from_checkpoint(model,
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = TFWriter(param.maxlen, vocab_file,
                   modes=["train"], task='cls',
-                  check_exist=False)
+                  check_exist=True)
 
 load = TFLoader(param.maxlen, param.batch_size, task='cls', epoch=5)
 
@@ -88,9 +88,10 @@ manager = tf.train.CheckpointManager(checkpoint, directory="./save",
                                      checkpoint_name="model.ckpt",
                                      max_to_keep=3)
 # For train model
+# if you want use @tf.function, you can't use the metrics i defined.
+
 Batch = 0
 for X, token_type_id, input_mask, Y in load.load_train():
-
     with tf.GradientTape() as tape:
         predict = model([X, token_type_id, input_mask])
         loss = mask_sparse_categotical_loss(Y, predict)
@@ -104,6 +105,7 @@ for X, token_type_id, input_mask, Y in load.load_train():
             print("Batch:{}\tprecision{:.4f}".format(Batch, precision))
             print("Batch:{}\trecall:{:.4f}".format(Batch, recall))
             print("Batch:{}\tf1score:{:.4f}".format(Batch, f1))
+        if Batch % 10 == 0:
             manager.save(checkpoint_number=Batch)
 
         with summary_writer.as_default():
