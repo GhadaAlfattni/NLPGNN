@@ -49,8 +49,8 @@ def get_pairs(word):
 
 class FullTokenizer:
     def __init__(self, encoder_file, vocab_file, errors='replace'):
-        self.encoder = json.load(open(encoder_file))
-        self.decoder = {v: k for k, v in self.encoder.items()}
+        self.encoder = json.load(open(encoder_file))  # unicode:index
+        self.decoder = {v: k for k, v in self.encoder.items()}  # index:unicode
         self.errors = errors  # how to handle errors in decoding
         self.byte_encoder = bytes_to_unicode()
         self.byte_decoder = {v: k for k, v in self.byte_encoder.items()}
@@ -63,15 +63,13 @@ class FullTokenizer:
         # Should haved added re.IGNORECASE so BPE merges can happen for capitalized versions of contractions
         self.pat = re.compile(r"""'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+""")
 
-    def bpe(self, token):
+    def bpe(self, token):  # e.g:'Ġrote'
         if token in self.cache:
             return self.cache[token]
-        word = tuple(token)
-        pairs = get_pairs(word)
-
-        if not pairs:
+        word = tuple(token) #(Ġ, r,o,t,e)
+        pairs = get_pairs(word)  # {('Ġ','r'),('o', 't'), ('r', 'o'), ('t', 'e')}
+        if not pairs:  # 单个字符直接返回
             return token
-
         while True:
             bigram = min(pairs, key=lambda pair: self.bpe_ranks.get(pair, float('inf')))
             if bigram not in self.bpe_ranks:
@@ -114,6 +112,7 @@ class FullTokenizer:
         for token in re.findall(self.pat, text):
             token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8'))
             bpe_tokens.extend(self.convert_token_to_id(bpe_token) for bpe_token in self.bpe(token).split(' '))
+            break
         return bpe_tokens
 
     def convert_tokens_to_string(self, tokens):  # decode
@@ -127,3 +126,8 @@ class FullTokenizer:
     def convert_token_to_id(self, token):  # encoder
         return self.encoder.get(token, self.encoder.get("<|endoftext|>"))
 
+
+encoder_file = r"C:\Users\Administrator\Desktop\fennlp\tests\TG\EN\gpt_base\encoder.json"
+vocab_file = r"C:\Users\Administrator\Desktop\fennlp\tests\TG\EN\gpt_base\vocab.bpe"
+t = FullTokenizer(encoder_file, vocab_file, errors='replace')
+t.tokenize(" name is ")

@@ -291,6 +291,15 @@ We don't know what direction they're going to move into."
 
 ```
 
+# TensorBoard
+tensorboard can help you visualize losses and evaluate indicators:
+
+useage:
+```
+ tensorboard --port 6006 --logdir="./tensorboard"
+```
+![loss](picture/loss.png) ![acc](picture/acc.png)
+
 
 
 

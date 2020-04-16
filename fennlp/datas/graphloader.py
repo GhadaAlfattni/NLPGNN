@@ -1,10 +1,15 @@
 #! encoding:utf-8
 
-import tensorflow as tf
-import numpy as np
 import os
-from scipy import sparse
+import pickle as pkl
+import sys
 from collections import defaultdict
+
+import networkx as nx
+import numpy as np
+import scipy.sparse as sp
+import tensorflow as tf
+from scipy import sparse
 
 
 class TuckERLoader():
@@ -98,7 +103,7 @@ class TuckERLoader():
         return tf.constant(targets_one_hot)
 
 
-class GCNLoader():
+class GCNLoaderzero:
     def __init__(self, base_path="data", dataset="cora"):
         self.base_path = base_path
         self.dataset = dataset
@@ -124,8 +129,10 @@ class GCNLoader():
         sparse_matrix = sparse_matrix.tocoo().astype(np.float32)
         values = sparse_matrix.data
         shape = sparse_matrix.shape
-        indices = np.array([[row, col] for row, col in zip(sparse_matrix.row, sparse_matrix.col)], dtype=np.int64)
-        return tf.sparse.SparseTensor(indices, values, shape)
+        # indices = np.array([[row, col] for row, col in zip(sparse_matrix.row, sparse_matrix.col)], dtype=np.int64)
+        indices = tf.constant([[row, col] for row, col in zip(sparse_matrix.row, sparse_matrix.col)], dtype=tf.int32)
+        return indices
+        # return tf.sparse.SparseTensor(indices, values, shape)
 
     def load(self):
         idx_features_labels = np.genfromtxt("{}/{}.content".format(self.base_path, self.dataset),
@@ -143,20 +150,23 @@ class GCNLoader():
         # N*2
         edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),
                          dtype=np.int32).reshape(edges_unordered.shape)
-        adj = sparse.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
-                                shape=(labels.shape[0], labels.shape[0]),
-                                dtype=np.float32)
+        # adj = sparse.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
+        #                         shape=(labels.shape[0], labels.shape[0]),
+        #                         dtype=np.float32)
 
         # 构建对称邻接矩阵
-        adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
 
-        features = self.normalize(features)
-        adj = self.normalize(adj + sparse.eye(adj.shape[0]))
+        # adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+        #
+        # features = self.normalize(features)
+        # adj = self.normalize(adj + sparse.eye(adj.shape[0]))
 
         features = tf.constant(np.array(features.todense()))
 
         labels = tf.constant(np.where(labels)[1])
-        adj = self.convert_2_sparse_tensor(adj)
+        adj = tf.constant(edges, dtype=tf.int32)
+
+        # adj = self.convert_2_sparse_tensor(adj)
 
         idx_train = range(140)
         idx_val = range(200, 500)
@@ -231,7 +241,7 @@ class RGCNLoader(object):
         return np.concatenate((pos_samples, neg_samples)), labels
 
     def edge_normalization(self, edge_type, edge_index, num_entity, num_relation):
-        from fennlp.gnn.scatter import scatter_sum
+        from fennlp.abandoned.scatter import scatter_sum
         '''
         
             Edge normalization trick
@@ -289,3 +299,82 @@ class RGCNLoader(object):
 
         self.samples = tf.constant(samples)
         self.labels = tf.constant(labels)
+
+
+class GCNLoader:
+    def __init__(self, dataset):
+        self.dataset_str = dataset
+
+    def parse_index_file(self, filename):
+        """Parse index file."""
+        index = []
+        for line in open(filename):
+            index.append(int(line.strip()))
+        return index
+
+    def sample_mask(self, idx, l):
+        """Create mask."""
+        mask = np.zeros(l)
+        mask[idx] = 1
+        return np.array(mask, dtype=np.bool)
+
+    def feature_normalize(self, features):
+        row_sum = tf.reduce_sum(features, 1)
+        features = tf.divide(features, tf.expand_dims(row_sum,1))
+        return features
+
+    def load(self):
+        names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
+        objects = []
+        for i in range(len(names)):
+            with open("data/ind.{}.{}".format(self.dataset_str, names[i]), 'rb') as f:
+                if sys.version_info > (3, 0):
+                    objects.append(pkl.load(f, encoding='latin1'))
+                else:
+                    objects.append(pkl.load(f))
+
+        x, y, tx, ty, allx, ally, graph = tuple(objects)
+        test_idx_reorder = self.parse_index_file("data/ind.{}.test.index".format(self.dataset_str))
+        test_idx_range = np.sort(test_idx_reorder)
+
+        if self.dataset_str == 'citeseer':
+            # Fix citeseer dataset (there are some isolated nodes in the graph)
+            # Find isolated nodes, add them as zero-vecs into the right position
+            test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder) + 1)
+            tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
+            tx_extended[test_idx_range - min(test_idx_range), :] = tx
+            tx = tx_extended
+            ty_extended = np.zeros((len(test_idx_range_full), y.shape[1]))
+            ty_extended[test_idx_range - min(test_idx_range), :] = ty
+            ty = ty_extended
+
+        features = sp.vstack((allx, tx)).tolil()
+        # 调整顺序
+        features[test_idx_reorder, :] = features[test_idx_range, :]
+
+        adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
+
+        labels = np.vstack((ally, ty))
+        labels[test_idx_reorder, :] = labels[test_idx_range, :]
+
+        idx_test = test_idx_range.tolist()  # 1000
+        idx_train = range(len(y))  # 140
+        idx_val = range(len(y), len(y) + 500)  # 500
+
+        train_mask = self.sample_mask(idx_train, labels.shape[0])
+        val_mask = self.sample_mask(idx_val, labels.shape[0])
+        test_mask = self.sample_mask(idx_test, labels.shape[0])
+
+        y_train = np.zeros(labels.shape)
+        y_val = np.zeros(labels.shape)
+        y_test = np.zeros(labels.shape)
+        y_train[train_mask, :] = labels[train_mask, :]
+        y_val[val_mask, :] = labels[val_mask, :]
+        y_test[test_mask, :] = labels[test_mask, :]
+        adj = adj.tocoo().astype(np.float32)
+        features = np.array(features.todense(), dtype=np.float32)
+        features = tf.constant(features)
+        adj = tf.constant([[row, col] for row, col in zip(adj.row, adj.col)], dtype=tf.int32)
+        # adj = tf.constant(np.array(adj.todense(),dtype=np.int32))
+        features = self.feature_normalize(features)
+        return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask

@@ -4,10 +4,9 @@
 @Author:zhoukaiyin
 """
 import tensorflow as tf
+
 from fennlp.tools import create_initializer, get_activation
 from .attention import GPTAttention
-from fennlp.layers import normalization
-from fennlp.layers.dense import TFConv1D
 
 
 class MLP(tf.keras.layers.Layer):
