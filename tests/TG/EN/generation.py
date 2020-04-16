@@ -18,11 +18,10 @@ from fennlp.tools import gpt2_init_weights_from_checkpoint
 # parameters: can be base large xlarge xxlarge for albert, base medium large for gpt2, base large for BERT.
 # cased: True or false, only for bert model.
 # url: you can give a link of other checkpoint.
-load_check = LoadCheckpoint(language='en', model="gpt2", parameters="base")
+load_check = LoadCheckpoint(language='en', model="gpt2", parameters="large")
 param, vocab_file, model_path, encoder_file = load_check.load_gpt2_param()
-print(param)
 
-param["batch_size"] = 10
+param.batch_size = 10
 
 tokenizer = gpt2_tokenization.FullTokenizer(encoder_file, vocab_file)
 start_token = tokenizer.convert_token_to_id("<|endoftext|>")

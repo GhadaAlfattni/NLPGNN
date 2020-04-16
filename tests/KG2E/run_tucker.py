@@ -5,10 +5,10 @@
 """
 import numpy as np
 import tensorflow as tf
+
 from fennlp.datas.graphloader import TuckERLoader
-from fennlp.models import tucker
-from fennlp.optimizers import optim
 from fennlp.metrics import Metric
+from fennlp.models import tucker
 
 lr = 0.005
 label_smoothing = 0.1
@@ -50,7 +50,6 @@ for epoch in range(500):
             hit1, hit3, hit5, hit10, MR, MRR = evaluate(model, batch_size)
             print("Epoch:{}\tLoss:{:.4f}\tHit@5:{:.4f}\tHit@10:{:.4f}\tMRR{:.4f}\n".format(epoch, np.mean(losses),
                                                                                            hit5, hit10, MRR))
-
         # For filter Warning in calculate gradient of moving_mean and moving_variance
         grads = tape.gradient(loss, model.trainable_variable)
         optimizer.apply_gradients(

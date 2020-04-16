@@ -4,22 +4,22 @@
 @Author:Kaiyin Zhou
 """
 import tensorflow as tf
-from fennlp.models import gpt2
-from fennlp.tools import gpt2_init_weights_from_checkpoint
+
 from fennlp.datas.checkpoint import LoadCheckpoint
-from fennlp.tokenizers import gpt2_tokenization
+from fennlp.models import gpt2
 from fennlp.sample import samples
+from fennlp.tokenizers import gpt2_tokenization
+from fennlp.tools import gpt2_init_weights_from_checkpoint
 
 # 载入参数
 # LoadCheckpoint(language='zh', model="bert", parameters="base", cased=True, url=None)
 # language: the language you used in your input data
 # model: the model you choose,could be bert albert and gpt2
-# parameters: can be base large xlarge xxlarge for albert, base medium large for gpt2, base large for BERT.
+# parameters: can be base large xlarge xxlarge for albert, base medium large xlarge for gpt2, base large for BERT.
 # cased: True or false, only for bert model.
 # url: you can give a link of other checkpoint.
-load_check = LoadCheckpoint(language='en', model="gpt2", parameters="medium")
+load_check = LoadCheckpoint(language='en', model="gpt2", parameters="large")
 param, vocab_file, model_path, encoder_file = load_check.load_gpt2_param()
-print(param)
 
 tokenizer = gpt2_tokenization.FullTokenizer(encoder_file, vocab_file)
 
@@ -55,7 +55,7 @@ while True:
     for _ in range(nsamples // param.batch_size):
         context = [context_tokens for _ in range(param.batch_size)]
 
-        out = samples.sample_sequence(model, param, length=100,
+        out = samples.sample_sequence(model, param, length=20,
                                       context=context,
                                       temperature=1,
                                       top_k=40, top_p=1)[:, len(context_tokens):]

@@ -81,12 +81,12 @@ class LoadCheckpoint(object):
                     if not os.path.exists("gpt_large"):
                         os.mkdir("gpt_large")
                     self.gpt_base_dir = "gpt_large"
-                    self.gpt_size = "762M"
+                    self.gpt_size = "774M"
                 elif parameters == "xlarge":
                     if not os.path.exists("gpt_xlarge"):
                         os.mkdir("gpt_xlarge")
                     self.gpt_base_dir = "gpt_xlarge"
-                    self.gpt_size = "1542M"
+                    self.gpt_size = "1558M"
 
         if model in ["bert", "albert"]:
             self.url = url

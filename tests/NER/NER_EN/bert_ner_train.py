@@ -18,8 +18,8 @@ load_check = LoadCheckpoint(language='en', cased=True)
 param, vocab_file, model_path = load_check.load_bert_param()
 
 # 定制参数
-param.batch_size = 8
-param.maxlen = 100
+param.batch_size = 2
+param.maxlen = 10
 param.label_size = 9
 
 
@@ -64,9 +64,9 @@ sparse_categotical_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_log
 
 # 初始化参数
 bert_init_weights_from_checkpoint(model,
-                             model_path,# bert_model.ckpt
-                             param.num_hidden_layers,
-                             pooler=False)
+                                  model_path,  # bert_model.ckpt
+                                  param.num_hidden_layers,
+                                  pooler=False)
 
 # 写入数据 通过check_exist=True参数控制仅在第一次调用时写入
 writer = TFWriter(param.maxlen, vocab_file,
