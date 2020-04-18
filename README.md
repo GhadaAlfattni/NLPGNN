@@ -1,4 +1,4 @@
-# fennlp 0.0.0
+# fennlp
 
 [![Build Status](https://travis-ci.org/kyzhouhzau/fennlp.svg?branch=master)](https://travis-ci.org/kyzhouhzau/fennlp/branches)
 [![PyPI version](https://badge.fury.io/py/fennlp.svg)](https://badge.fury.io/py/fenlp)
@@ -301,6 +301,28 @@ useage:
  tensorboard --port 6006 --logdir="./tensorboard"
 ```
 ![loss](picture/loss1.png) ![acc](picture/acc1.png)
+
+
+# Parameter Settings
+1、For English tasks, you need to set the parameter "cased" (in fennlp.datas.checkpoint.LoadCheckpoint) to be consistent with your preprocessed input data to ensure that the tokenizer can correctly distinguish case.
+
+2、When you use bert or albert, the following parameters is necessary:
+```
+param.maxlen
+param.label_size
+param.batch_size
+```
+if you don't know the count of label_size, the script will tell you when you first run the train codes.
+
+3、If you are not familiar with the optimizer in bert and albert, it does not matter.
+The most important thing you need to remember is that the parameters "learning_rate" and "decay_steps" (in fennlp.optimizers.optim.AdamWarmup)
+is important. You can set the "learning rate" to a relatively small value, and let "decay_steps" equal to samples*epoch/batch_size or little higher.
+
+4、If you find that the code runs slower, you can try to use @ tf.function and set the appropriate model writing and evaluation frequency.
+
+5、Any other problem you can concat me by "zhoukaiyinhzau@gmail.com" or ask questions in issue.   
+
+
 
 
 

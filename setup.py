@@ -11,7 +11,7 @@ URL = 'https://github.com/kyzhouhzau/fennlp'
 EMAIL = 'zhoukaiyinhzau@gmail.com'
 AUTHOR = 'Kaiyin Zhou'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.0.6'
+VERSION = '0.0.7'
 
 REQUIRED = [
     'typeguard',
