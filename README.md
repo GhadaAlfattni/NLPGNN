@@ -314,13 +314,15 @@ param.batch_size
 ```
 if you don't know the count of label_size, the script will tell you when you first run the train codes.
 
-3、If you are not familiar with the optimizer in bert and albert, it does not matter.
+3、Learning rate and batch_size will determine model convergence, see [Link](https://mp.weixin.qq.com/s/C-MMNaQdafK3JNh1ZGOVJA)  for more detail.
+
+4、If you are not familiar with the optimizer in bert and albert, it does not matter.
 The most important thing you need to remember is that the parameters "learning_rate" and "decay_steps" (in fennlp.optimizers.optim.AdamWarmup)
 is important. You can set the "learning rate" to a relatively small value, and let "decay_steps" equal to samples*epoch/batch_size or little higher.
 
-4、If you find that the code runs slower, you can try to use @ tf.function and set the appropriate model writing and evaluation frequency.
+5、If you find that the code runs slower, you can try to use @ tf.function and set the appropriate model writing and evaluation frequency.
 
-5、Any other problem you can concat me by "zhoukaiyinhzau@gmail.com" or ask questions in issue.   
+6、Any other problem you can concat me by "zhoukaiyinhzau@gmail.com" or ask questions in issue.   
 
 
 
