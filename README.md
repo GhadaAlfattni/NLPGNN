@@ -18,8 +18,8 @@ Models:
 * GPT2
 * TextCNN
 * Bilstm+Attention
-* TucKER
-* GCN
+* ~~TucKER~~
+* ~~GCN~~
 
 Examples (See tests for more details):
 
@@ -31,8 +31,8 @@ Examples (See tests for more details):
 * GPT2-generation (English Version)
 * Bilstm+Attention (Chinese and English Version)
 * TextCNN(Chinese and English Version)
-* GCN (2 Layer, CORA data set)
-* TuckER (English Version, WN18 data set)
+* ~~GCN (2 Layer, CORA data set)~~
+* ~~TuckER (English Version, WN18 data set)~~
 
 All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
@@ -81,7 +81,7 @@ python setup.py install
 ```
 or 
 ```
-pip install fennlp (Slower version update, not recommended at present)
+pip install fennlp
 ```
 
 3. run model
