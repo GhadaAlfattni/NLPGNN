@@ -19,7 +19,8 @@ REQUIRED = [
     'tqdm',
     'regex',
     'scikit-learn',
-    'sentencepiece'
+    'sentencepiece',
+    'networkx'
 ]
 
 # Where the magic happens:
