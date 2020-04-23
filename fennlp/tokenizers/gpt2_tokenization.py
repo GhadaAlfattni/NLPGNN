@@ -126,8 +126,3 @@ class FullTokenizer:
     def convert_token_to_id(self, token):  # encoder
         return self.encoder.get(token, self.encoder.get("<|endoftext|>"))
 
-
-encoder_file = r"C:\Users\Administrator\Desktop\fennlp\tests\TG\EN\gpt_base\encoder.json"
-vocab_file = r"C:\Users\Administrator\Desktop\fennlp\tests\TG\EN\gpt_base\vocab.bpe"
-t = FullTokenizer(encoder_file, vocab_file, errors='replace')
-t.tokenize(" name is ")
