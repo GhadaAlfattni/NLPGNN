@@ -8,9 +8,10 @@
 [![Coverage Status](https://coveralls.io/repos/github/kyzhouhzau/fennlp/badge.svg)](https://coveralls.io/github/kyzhouhzau/fennlp)
 
 # Package description
-An out-of-the-box NLP toolkit can easily help you solve tasks such as
-Entity Recognition, Text Classification, Relation Extraction and so on.
-Currently it contain the following models (see "tests" dictionary for more details):
+The field of natural language processing is currently undergoing tremendous changes, and many excellent models have been proposed in recent years, including BERT, GPT, etc.  
+At the same time, graph neural network as an exquisite design is constantly being used in the field of natural language processing, such as TestGCN and Tensor-TextGCN.  
+This toolbox is dedicated to natural language processing and expects to implement models in the simplest way.  
+Keywords: NLP; GNN
 
 Models:
 * BERT
