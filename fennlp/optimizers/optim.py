@@ -7,7 +7,7 @@ import tensorflow as tf
 class AdamWarmup(tf.keras.optimizers.Optimizer):
     def __init__(self,
                  learning_rate=0.01,  # 重要参数
-                 decay_steps=0,  # 重要参数
+                 decay_steps=10e10,  # 重要参数
                  warmup_steps=0,  # 重要参数 0.1*decay_steps
                  end_learning_rate=0.0,
                  power=1.0,

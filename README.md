@@ -18,8 +18,8 @@ Models:
 * GPT2
 * TextCNN
 * Bilstm+Attention
+* GCN, GAN, GIN 
 * ~~TucKER~~
-* ~~GCN~~
 
 Examples (See tests for more details):
 
@@ -31,13 +31,17 @@ Examples (See tests for more details):
 * GPT2-generation (English Version)
 * Bilstm+Attention (Chinese and English Version)
 * TextCNN(Chinese and English Version)
-* ~~GCN (2 Layer, CORA data set)~~
+* GCN, GAN, GIN  (Base on message passing)
 * ~~TuckER (English Version, WN18 data set)~~
 
 All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
 # Status
-2020/4/16：Currently focusing on models of GNN in nlp, and trying to integrate some GNN models into fennlp.
+2020/4/25: add GAN, GIN model, based on message passing methods.
+
+2020/4/23: add GCN model, based on message passing methods.
+
+2020/4/16：currently focusing on models of GNN in nlp, and trying to integrate some GNN models into fennlp.
 
 2020/4/2: add GPT2 model, could used parameters released by OpenAI (base,medium,large). 
 More detail reference dictionary "TG/EN/interactive.py"
@@ -303,6 +307,18 @@ useage:
 ![loss](picture/loss1.png) ![acc](picture/acc1.png)
 
 
+# GNN
+## 1、GCN (Based on message passing)
+
+Same data split and parameters setting as proposed in the [paper](https://arxiv.org/abs/1609.02907) 
+The poor results obtained by GIN here may be that the model is more suitable for graph classification.
+
+|model    | Cora     |  Pubmed    |Citeseer  |
+| ------- | -------  |-------     |-------   |
+|GCN      |0.8180   |0.7950    |  0.7120    |  
+|GAN      |0.8300   | 0.7900   |  0.7230    | 
+|GIN      |0.7650  |0.7270    |  0.6250    | 
+
 # Parameter Settings
 1、For English tasks, you need to set the parameter "cased" (in fennlp.datas.checkpoint.LoadCheckpoint) to be consistent with your preprocessed input data to ensure that the tokenizer can correctly distinguish case.
 
@@ -323,9 +339,6 @@ is important. You can set the "learning rate" to a relatively small value, and l
 5、If you find that the code runs slower, you can try to use @ tf.function and set the appropriate model writing and evaluation frequency.
 
 6、Any other problem you can concat me by "zhoukaiyinhzau@gmail.com" or ask questions in issue.   
-
-
-
 
 
 

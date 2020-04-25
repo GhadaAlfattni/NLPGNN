@@ -316,11 +316,11 @@ class SparseAccuracy(object):
         return acc
 
 
-class MaskAccuracy():
-    def __call__(self, labels, preds, mask=None):
-        correct_prediction = tf.equal(tf.argmax(preds, 1), tf.argmax(labels, 1))
-        accuracy_all = tf.cast(correct_prediction, tf.float32)
-        mask = tf.cast(mask, dtype=tf.float32)
+class MaskAccuracy:
+    def __call__(self, labels, predicts, input_mask=None):
+        correct_prediction = tf.equal(tf.argmax(predicts, 1), tf.argmax(labels, 1))
+        accuracy_all = tf.cast(correct_prediction, tf.float64)
+        mask = tf.cast(input_mask, dtype=tf.float64)
         mask /= tf.reduce_mean(mask)
         accuracy_all *= mask
         return tf.reduce_mean(accuracy_all)

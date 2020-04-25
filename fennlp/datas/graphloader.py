@@ -10,6 +10,7 @@ import numpy as np
 import scipy.sparse as sp
 import tensorflow as tf
 from scipy import sparse
+from fennlp.gnn.utils import add_remain_self_loop, add_self_loop
 
 
 class TuckERLoader():
@@ -302,8 +303,10 @@ class RGCNLoader(object):
 
 
 class GCNLoader:
-    def __init__(self, dataset):
+    def __init__(self, dataset, loop=True, features_norm=True):
         self.dataset_str = dataset
+        self.loop = loop
+        self.features_norm = features_norm
 
     def parse_index_file(self, filename):
         """Parse index file."""
@@ -319,8 +322,11 @@ class GCNLoader:
         return np.array(mask, dtype=np.bool)
 
     def feature_normalize(self, features):
-        row_sum = tf.reduce_sum(features, 1)
-        features = tf.divide(features, tf.expand_dims(row_sum,1))
+        rowsum = np.array(features.sum(1))
+        r_inv = np.power(rowsum, -1).flatten()
+        r_inv[np.isinf(r_inv)] = 0.
+        r_mat_inv = sp.diags(r_inv)
+        features = r_mat_inv.dot(features)
         return features
 
     def load(self):
@@ -368,13 +374,16 @@ class GCNLoader:
         y_train = np.zeros(labels.shape)
         y_val = np.zeros(labels.shape)
         y_test = np.zeros(labels.shape)
+
         y_train[train_mask, :] = labels[train_mask, :]
         y_val[val_mask, :] = labels[val_mask, :]
         y_test[test_mask, :] = labels[test_mask, :]
         adj = adj.tocoo().astype(np.float32)
         features = np.array(features.todense(), dtype=np.float32)
+        if self.features_norm:
+            features = self.feature_normalize(features)
         features = tf.constant(features)
         adj = tf.constant([[row, col] for row, col in zip(adj.row, adj.col)], dtype=tf.int32)
-        # adj = tf.constant(np.array(adj.todense(),dtype=np.int32))
-        features = self.feature_normalize(features)
-        return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask
+        if self.loop:
+            adj = [add_remain_self_loop(adj, len(features))]
+        return features, adj, y_train, y_val, y_test, train_mask, val_mask, test_mask

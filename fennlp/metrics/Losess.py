@@ -25,11 +25,12 @@ class MaskCategoricalCrossentropy():
 
     def __call__(self, y_true, y_predict, input_mask=None):
         cross_entropy = tf.keras.losses.categorical_crossentropy(y_true, y_predict, self.from_logits)
+        # cross_entropy = tf.nn.softmax_cross_entropy_with_logits(y_true, y_predict)
+
         if self.use_mask:
             input_mask = tf.cast(input_mask, dtype=tf.float32)
             input_mask /= tf.reduce_mean(input_mask)
             cross_entropy *= input_mask
-            # mask loss
             return tf.reduce_mean(cross_entropy)
         else:
             return tf.reduce_mean(cross_entropy)
