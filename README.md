@@ -308,7 +308,7 @@ useage:
 
 
 # GNN
-## 1、GCN (Based on message passing)
+## 1、GCN, GAN, GIN (Based on message passing)
 
 Same data split and parameters setting as proposed in the [paper](https://arxiv.org/abs/1609.02907) 
 The poor results obtained by GIN here may be that the model is more suitable for graph classification.
