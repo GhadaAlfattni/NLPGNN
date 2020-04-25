@@ -9,7 +9,7 @@
 
 # Package description
 The field of natural language processing is currently undergoing tremendous changes, and many excellent models have been proposed in recent years, including BERT, GPT, etc.  
-At the same time, graph neural network as an exquisite design is constantly being used in the field of natural language processing, such as TestGCN and Tensor-TextGCN.  
+At the same time, graph neural network as an exquisite design is constantly being used in the field of natural language processing, such as TextGCN and Tensor-TextGCN.  
 This toolbox is dedicated to natural language processing and expects to implement models in the simplest way.  
 Keywords: NLP; GNN
 
