@@ -312,13 +312,12 @@ useage:
 ## 1、GCN, GAN, GIN (Based on message passing)
 
 Same data split and parameters setting as proposed in the [paper](https://arxiv.org/abs/1609.02907) 
-The poor results obtained by GIN here may be that the model is more suitable for graph classification.
 
 |model    | Cora     |  Pubmed    |Citeseer  |
 | ------- | -------  |-------     |-------   |
 |GCN      |0.8180   |0.7950    |  0.7120    |  
 |GAN      |0.8300   | 0.7900   |  0.7230    | 
-|GIN      |0.7650  |0.7270    |  0.6250    | 
+|GIN      |~~0.7650~~  |~~0.7270~~    |  ~~0.6250~~    | 
 
 # Parameter Settings
 1、For English tasks, you need to set the parameter "cased" (in fennlp.datas.checkpoint.LoadCheckpoint) to be consistent with your preprocessed input data to ensure that the tokenizer can correctly distinguish case.
