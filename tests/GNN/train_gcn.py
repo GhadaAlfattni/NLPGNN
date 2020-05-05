@@ -1,25 +1,26 @@
 #! encoding:utf-8
 import time
 import tensorflow as tf
-from fennlp.datas import graphloader
+from fennlp.datas import Planetoid
 from fennlp.metrics import Losess, Metric
-from fennlp.models import GCN
+from fennlp.models import GCNLayer
 from fennlp.callbacks import EarlyStopping
 
 tf.random.set_seed(10)
 
 hidden_dim = 16
-num_class = 3
+num_class = 6
 drop_rate = 0.5
 epoch = 200
 early_stopping = 10
 penalty = 5e-4
 
-loader = graphloader.GCNLoader(dataset="pubmed", loop=True, features_norm=True)
+# cora, pubmed, citeseer
+data = Planetoid(name="citeseer", loop=True, norm=True)
 
-features, adj, y_train, y_val, y_test, train_mask, val_mask, test_mask = loader.load()
+features, adj, y_train, y_val, y_test, train_mask, val_mask, test_mask = data.load()
 
-model = GCN.GCNLayer(hidden_dim, num_class, drop_rate)
+model = GCNLayer(hidden_dim, num_class, drop_rate)
 
 optimizer = tf.keras.optimizers.Adam(0.01)
 crossentropy = Losess.MaskCategoricalCrossentropy()

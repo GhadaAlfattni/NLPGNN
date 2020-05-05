@@ -7,7 +7,11 @@
 import os
 import importlib
 # automatically import any Python files in the datas/ directory
-for file in os.listdir(os.path.dirname(__file__)):
-    if file.endswith(".py") and not file.startswith("_"):
-        dataset_name = file[: file.find(".py")]
-        module = importlib.import_module("fennlp.datas." + dataset_name)
+# for file in os.listdir(os.path.dirname(__file__)):
+#     if file.endswith(".py") and not file.startswith("_"):
+#         dataset_name = file[: file.find(".py")]
+#         module = importlib.import_module("fennlp.datas." + dataset_name)
+from .checkpoint import *
+from .dataloader import *
+from .graphloader import *
+from .word2vec import *

@@ -21,7 +21,6 @@ class GINConvolution(MessagePassing):
         self.eps = eps
         self.train_eps = train_eps
 
-
     def build(self, input_shapes):
         node_embedding_shapes = input_shapes.node_embeddings
         # adjacency_list_shapes = input_shapes.adjacency_lists
@@ -54,9 +53,8 @@ class GINConvolution(MessagePassing):
 
     def call(self, inputs, training):
         adjacency_lists = inputs.adjacency_lists
-        adjacency_lists = [remove_self_loop(adjacency_lists[0])]
         node_embeddings = inputs.node_embeddings
-        part1 = (1+self.eps)*node_embeddings
+        part1 = (1 + self.eps) * node_embeddings
         part2 = self.propagate(GNNInput(node_embeddings, adjacency_lists), training)
-        out = self.nn(part1+part2)
+        out = self.nn(part1 + part2, training=training)
         return out

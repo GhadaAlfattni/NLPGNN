@@ -42,13 +42,11 @@ class AdamWarmup(tf.keras.optimizers.Optimizer):
         self._set_hyper('warmup_steps', warmup_steps)
         self._set_hyper('decay_steps', decay_steps)
         self._set_hyper('end_learning_rate', end_learning_rate)
-        self.learning_rate = learning_rate
 
         self.epsilon = epsilon or tf.keras.backend.epislon()
         self.bias_correction = bias_correction  # 是否做偏差修正
         self.weight_decay_rate = weight_decay_rate
         self.weight_decay_pattern = weight_decay_pattern
-        self.learning_rate = learning_rate
 
     def _create_slots(self, var_list):
         for var in var_list:
@@ -86,7 +84,8 @@ class AdamWarmup(tf.keras.optimizers.Optimizer):
         lr_t = tf.where(
             global_step <= warmup_steps,
             lr_t * (global_step / warmup_steps),
-            end_learning_rate + (lr_t - end_learning_rate) * (1.0 - tf.minimum(global_step, decay_steps) / decay_steps) ** (power),
+            end_learning_rate + (lr_t - end_learning_rate) * (
+                    1.0 - tf.minimum(global_step, decay_steps) / decay_steps) ** (power),
         )
 
         if indices is None:
@@ -173,10 +172,8 @@ class RAdam(tf.keras.optimizers.Optimizer):
         self._set_hyper('beta_1', beta_1)
         self._set_hyper('beta_2', beta_2)
         self._set_hyper('freedom', freedom)
-        self._set_hyper('weight_decay_rate',weight_decay_rate)
-        self.learning_rate = learning_rate
+        self._set_hyper('weight_decay_rate', weight_decay_rate)
         self.epsilon = epsilon or tf.keras.backend.epislon()
-        self.learning_rate = learning_rate
         self.weight_decay_pattern = weight_decay_pattern
         self.weight_decay_rate = weight_decay_rate
 
@@ -250,3 +247,4 @@ class RAdam(tf.keras.optimizers.Optimizer):
         }
         base_config = super(AdamWarmup, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+

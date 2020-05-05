@@ -1,16 +1,21 @@
 #! encoding:utf-8
-
+import glob
 import os
 import pickle as pkl
 import sys
 from collections import defaultdict
-
+from six.moves import urllib
 import networkx as nx
 import numpy as np
 import scipy.sparse as sp
 import tensorflow as tf
 from scipy import sparse
-from fennlp.gnn.utils import add_remain_self_loop, add_self_loop
+import zipfile
+from fennlp.gnn.utils import *
+
+from sklearn.model_selection import StratifiedKFold
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'
 
 
 class TuckERLoader():
@@ -302,11 +307,33 @@ class RGCNLoader(object):
         self.labels = tf.constant(labels)
 
 
-class GCNLoader:
-    def __init__(self, dataset, loop=True, features_norm=True):
-        self.dataset_str = dataset
+class Planetoid:
+    def __init__(self, name, data_dir="data", loop=True, norm=True):
+        self.name = name
         self.loop = loop
-        self.features_norm = features_norm
+        self.norm = norm
+        self.data_dir = data_dir
+        self.url = 'https://github.com/kimiyoung/planetoid/raw/master/data'
+        self.download()
+
+    def download(self):
+        output_dir = os.path.join(self.data_dir, self.name)
+        for name in self.raw_file():
+            file_name = "{}/{}".format(output_dir, name)
+            if not os.path.exists(self.data_dir):
+                os.mkdir(self.data_dir)
+            if not os.path.exists(output_dir):
+                os.mkdir(output_dir)
+            if not os.path.exists(file_name):
+                url = "{}/{}".format(self.url, name)
+                print('Downloading', url)
+                data = urllib.request.urlopen(url)
+                with open(file_name, 'wb') as wf:
+                    wf.write(data.read())
+
+    def raw_file(self):
+        names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph', 'test.index']
+        return ['ind.{}.{}'.format(self.name.lower(), name) for name in names]
 
     def parse_index_file(self, filename):
         """Parse index file."""
@@ -330,20 +357,22 @@ class GCNLoader:
         return features
 
     def load(self):
-        names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
+        names = self.raw_file()
         objects = []
-        for i in range(len(names)):
-            with open("data/ind.{}.{}".format(self.dataset_str, names[i]), 'rb') as f:
-                if sys.version_info > (3, 0):
-                    objects.append(pkl.load(f, encoding='latin1'))
-                else:
-                    objects.append(pkl.load(f))
+        for name in names[:-1]:
+            f = open("data/{}/{}".format(self.name, name), 'rb')
+            if sys.version_info > (3, 0):
+                objects.append(pkl.load(f, encoding='latin1'))
+            else:
+                objects.append(pkl.load(f))
+            f.close()
 
         x, y, tx, ty, allx, ally, graph = tuple(objects)
-        test_idx_reorder = self.parse_index_file("data/ind.{}.test.index".format(self.dataset_str))
+
+        test_idx_reorder = self.parse_index_file("data/{}/{}".format(self.name, names[-1]))
         test_idx_range = np.sort(test_idx_reorder)
 
-        if self.dataset_str == 'citeseer':
+        if self.name == 'citeseer':
             # Fix citeseer dataset (there are some isolated nodes in the graph)
             # Find isolated nodes, add them as zero-vecs into the right position
             test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder) + 1)
@@ -359,6 +388,8 @@ class GCNLoader:
         features[test_idx_reorder, :] = features[test_idx_range, :]
 
         adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
+        adj = adj.tocoo().astype(np.float32)
+        adj = tf.constant([[row, col] for row, col in zip(adj.row, adj.col)], dtype=tf.int32)
 
         labels = np.vstack((ally, ty))
         labels[test_idx_reorder, :] = labels[test_idx_range, :]
@@ -378,12 +409,196 @@ class GCNLoader:
         y_train[train_mask, :] = labels[train_mask, :]
         y_val[val_mask, :] = labels[val_mask, :]
         y_test[test_mask, :] = labels[test_mask, :]
-        adj = adj.tocoo().astype(np.float32)
         features = np.array(features.todense(), dtype=np.float32)
-        if self.features_norm:
+
+        if self.norm:
             features = self.feature_normalize(features)
-        features = tf.constant(features)
-        adj = tf.constant([[row, col] for row, col in zip(adj.row, adj.col)], dtype=tf.int32)
         if self.loop:
             adj = [add_remain_self_loop(adj, len(features))]
+        else:
+            adj = [adj]
+
         return features, adj, y_train, y_val, y_test, train_mask, val_mask, test_mask
+
+
+class TUDataset:
+    def __init__(self, name, split, data_dir="data"):
+        self.name = name
+        self.data_dir = data_dir
+        self.split = split
+        self.url = "http://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets"
+        if not os.path.exists("{}/{}".format(data_dir, name)):
+            self.download()
+        self.x, self.y, self.edge_index, self.edge_attr, self.num_nodes, self.batch = self.read_data(self.data_dir,
+                                                                                                     self.name)
+        if self.split in [5, 10]:
+            kflod = StratifiedKFold(split)
+            self.index_list = list(kflod.split(self.y, self.y))
+
+    def raw_file(self):
+        names = ['A', "graph_indicator"]
+        return ["{}_{}.txt".format(self.name, name) for name in names]
+
+    def unzip(self, filename, folder):
+        with zipfile.ZipFile(filename, 'r') as f:
+            f.extractall(folder)
+
+    def read_file(self, folder, prefix, name, dtype):
+        path = os.path.join(folder, "{}/{}_{}.txt".format(prefix, prefix, name))
+        return self.read_raw_text(path, seq=',', dtype=dtype)
+
+    def read_raw_text(self, path, seq=None, start=0, end=None, dtype=None):
+        with open(path, 'r') as rf:
+            src = rf.read().split('\n')[:-1]
+        src = [[dtype(x) for x in line.split(seq)[start:end]] for line in src]
+        return np.array(src, dtype=dtype)
+
+    def download(self):
+        if not os.path.exists(self.data_dir):
+            os.mkdir(self.data_dir)
+        url = "{}/{}.zip".format(self.url, self.name)
+        outpath = "{}/{}.zip".format(self.data_dir, self.name)
+        print('Downloading', url)
+        data = urllib.request.urlopen(url)
+        with open(outpath, 'wb') as wf:
+            wf.write(data.read())
+        self.unzip(outpath, self.data_dir)
+        os.unlink(outpath)
+
+    def read_data(self, folder, prefix):
+        files = glob.glob(os.path.join(folder, '{}/{}_*.txt'.format(prefix, prefix)))
+        names = [f.split(os.sep)[-1][len(prefix) + 1:-4] for f in files]
+        edge_index = self.read_file(folder, prefix, 'A', dtype=int) - 1  # 从0开始编码
+        batch = self.read_file(folder, prefix, 'graph_indicator', dtype=int) - 1  # 从0开始编码
+        node_attributes = node_labels = None
+        if 'node_attributes' in names:
+            node_attributes = self.read_file(folder, prefix, 'node_attributes', dtype=float)
+        if 'node_labels' in names:
+            node_labels = self.read_file(folder, prefix, 'node_labels', dtype=int)
+            node_labels = node_labels - node_labels.min(0)[0]
+            node_labels = np.reshape(node_labels, [-1])
+            node_labels = np.eye(len(set(node_labels)))[node_labels]  # one_hot
+        x = self.cat([node_attributes, node_labels])
+        edge_attributes, edge_labels = None, None
+        if 'edge_attributes' in names:
+            edge_attributes = self.read_file(folder, prefix, 'edge_attributes', dtype=float)
+        if 'edge_labels' in names:
+            edge_labels = self.read_file(folder, prefix, 'edge_labels', dtype=int)
+            edge_labels = edge_labels - edge_labels.min(0)[0]
+            edge_labels = np.reshape(edge_labels, [-1])
+
+            edge_labels = np.eye(len(set(edge_labels)))[edge_labels]
+        edge_attr = self.cat([edge_attributes, edge_labels])
+        y = None
+        if 'graph_attributes' in names:  # Regression problem.
+            y = self.read_file(folder, prefix, 'graph_attributes', dtype=float)
+        elif 'graph_labels' in names:  # Classification problem.
+            y = self.read_file(folder, prefix, 'graph_labels', dtype=int)
+            _, _, y = np.unique(y, return_index=True, return_inverse=True)
+            y = np.reshape(y, y.shape)
+        num_nodes = edge_index.max() + 1 if x is None else len(node_labels)
+        # edge_index, edge_attr = remove_self_loop(edge_index, edge_attr)
+        # edge_index, edge_attr = coalesce(edge_index, edge_attr, num_nodes)
+        return x, y, edge_index, edge_attr, num_nodes, batch
+
+    def cat(self, seq):
+        seq = [item for item in seq if item is not None]
+        seq = [np.expand_dims(item, -1) if len(item.shape) == 1 else item for item in seq]
+        return np.concatenate(seq, axis=-1) if len(seq) > 0 else None
+
+    def load(self, batch_size=128, block_index=None):
+        if self.split < 1:
+            sample_train = int(len(self.y) * self.split)
+            train_index = np.random.choice(np.arange(len(self.y)), size=sample_train, replace=False)
+            # train_index = np.arange(10)
+            test_index = np.delete(np.arange(len(self.y)), train_index)
+
+        elif self.split in [5, 10]:
+            train_index = self.index_list[block_index][0]
+            test_index = self.index_list[block_index][1]
+        else:
+            raise ValueError("Current split not support")
+        tudata = TuData(train_index, test_index)
+        trainslices, testslices, zero_start_edge_index = tudata.get_slice(self.x, self.y, self.edge_index,
+                                                                          self.edge_attr, self.batch)
+
+        train_data = tudata.sample_data(self.x, self.y, zero_start_edge_index, self.edge_attr, self.batch, trainslices)
+        test_data = tudata.sample_data(self.x, self.y, zero_start_edge_index, self.edge_attr, self.batch, testslices)
+        return train_data.shuffle(1000).window(batch_size), test_data.shuffle(1000).window(batch_size)
+
+
+class TuData:
+    def __init__(self, train_index, test_index):
+        self.train_index = train_index
+        self.test_index = test_index
+
+    def split(self, x, y, edge_index, edge_attr, batch):
+
+        # batch = np.reshape(batch, [-1])
+        node_slice = np.cumsum(np.bincount(batch), axis=0)
+
+        node_slice = np.concatenate([[0], node_slice])
+
+        row = edge_index[:, 0]
+
+        edge_slice = np.cumsum(np.bincount(batch[row]), axis=0)
+        edge_slice = np.concatenate([[0], edge_slice])
+
+        zero_start_edge_index = edge_index - np.expand_dims(node_slice[batch[row]], 1)
+
+        edge_slice = np.expand_dims(edge_slice, -1)
+        edge_slice = np.concatenate([edge_slice[:-1], edge_slice[1:]], 1)
+
+        slices = {'edge_index': edge_slice}
+        if x is not None:
+            node_slice = np.expand_dims(node_slice, -1)
+            slices['x'] = np.concatenate([node_slice[:-1], node_slice[1:]], 1)
+        if edge_attr is not None:
+            slices['edge_attr'] = edge_slice
+        if y is not None:
+            if y.shape[0] == batch.shape[0]:
+                slices['y'] = node_slice
+            else:
+                slices['y'] = np.arange(0, batch[-1] + 2, dtype=np.long)
+        return slices, zero_start_edge_index
+
+    def get_slice(self, x, y, edge_index, edge_attr, batch):
+        batch = np.reshape(batch, [-1])
+        slices, edge_index_zero_start = self.split(x, y, edge_index, edge_attr, batch)
+        train_slices = {}
+        for key in slices.keys():
+            train_slices[key] = slices[key][self.train_index]
+
+        test_slices = {}
+        for key in slices.keys():
+            test_slices[key] = slices[key][self.test_index]
+
+        return train_slices, test_slices, edge_index_zero_start
+
+    def sample_data(self, x, y, edge_index, edge_attr, batch, sample_index):
+        batch = np.reshape(batch, [-1])
+        for key, value in sample_index.items():
+            if key == "x":
+                x = [x[start_end[0]:start_end[1]].tolist() for start_end in value]
+                batch = [batch[start_end[0]:start_end[1]].tolist() for start_end in value]
+            elif key == "y":
+                y = y[value]
+            elif key == "edge_index":
+                edge_index = [edge_index[start_end[0]:start_end[1]].tolist() for start_end in value]
+            elif key == "edge_attr":
+                edge_attr = [edge_attr[start_end[0]:start_end[1]].tolist() for start_end in value]
+
+        return tf.data.Dataset.from_generator(self.generator(x, y, edge_index, edge_attr, batch),
+                                              (tf.float32, tf.int32, tf.int32, tf.float32, tf.int32))
+
+    def generator(self, x, y, edge_index, edge_attr, batch):
+
+        def gen():
+            if edge_attr == None:
+                for i, x_i in enumerate(x):
+                    yield x[i], y[i], edge_index[i], edge_attr, batch[i]
+            else:
+                for i, x_i in enumerate(x):
+                    yield x[i], y[i], edge_index[i], edge_attr[i], batch[i]
+
+        return gen

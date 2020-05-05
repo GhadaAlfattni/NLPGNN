@@ -4,27 +4,28 @@
 """
 import time
 import tensorflow as tf
-from fennlp.datas import graphloader
+from fennlp.datas import Planetoid
 from fennlp.metrics import Losess, Metric
-from fennlp.models import GAT
+from fennlp.models import GATLayer
 from fennlp.callbacks import EarlyStopping
 
 tf.random.set_seed(10)  # 随机选择的
 hidden_dim = 8  # 8*heads=64
-num_class = 3
+num_class = 6
 drop_rate = 0.6
 epoch = 1000
 patience = 100
-# penalty = 0.0005 # for cora and citeseer
-penalty = 0.001 # for pubmed
+penalty = 0.0005  # for cora and citeseer
+# penalty = 0.001  # for pubmed
 
-loader = graphloader.GCNLoader(dataset="pubmed", loop=True, features_norm=True)
+# cora, pubmed, citeseer
+loader = Planetoid(name="citeseer", loop=True, norm=True)
 
 features, adj, y_train, y_val, y_test, train_mask, val_mask, test_mask = loader.load()
 
-model = GAT.GATLayer(hidden_dim=hidden_dim, num_class=num_class, dropout_rate=drop_rate)
+model = GATLayer(hidden_dim=hidden_dim, num_class=num_class, dropout_rate=drop_rate)
 
-optimizer = tf.keras.optimizers.Adam(0.01)
+optimizer = tf.keras.optimizers.Adam(0.005)
 crossentropy = Losess.MaskCategoricalCrossentropy()
 accscore = Metric.MaskAccuracy()
 stop_monitor = EarlyStopping(monitor="loss", patience=patience)

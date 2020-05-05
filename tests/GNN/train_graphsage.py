@@ -4,23 +4,22 @@ import numpy as np
 import time
 from fennlp.datas import TUDataset
 from fennlp.metrics import Losess, Metric
-from fennlp.models import GINLayer
+from fennlp.models import GraphSAGE
 from fennlp.gnn.utils import merge_batch_graph
 
 dim = 64
 num_class = 2
 drop_rate = 0.5
-epoch = 300
+epoch = 200
 lr = 0.001
 split = 10  # 10-fold
 
-tf.random.set_seed(1124)
 accs_all = []
-dataloader = TUDataset(name="PROTEINS", split=split)
+dataloader = TUDataset(name="NCI1", split=split)
 
 for block_index in range(split):
 
-    model = GINLayer(dim, num_class, drop_rate)
+    model = GraphSAGE(dim, num_class, drop_rate)
 
     optimize = tf.optimizers.Adam(lr)
 

@@ -313,12 +313,19 @@ useage:
 
 Same data split and parameters setting as proposed in the [paper](https://arxiv.org/abs/1609.02907) 
 
+* Nodes Classfication
+
 |model    | Cora     |  Pubmed    |Citeseer  |
 | ------- | -------  |-------     |-------   |
-|GCN      |0.8180   |0.7950    |  0.7120    |  
-|GAN      |0.8300   | 0.7900   |  0.7230    | 
-|GIN      |~~0.7650~~  |~~0.7270~~    |  ~~0.6250~~    | 
+|GCN      |81.80   |79.50    |  71.20    |  
+|GAN      |83.00   | 79.00   |  72.30    |
 
+* Graph Classfication (10-fold)
+
+|model    | MUTAG     |  PROTEINS    |NCI1  |
+| ------- | -------  |-------     |-------   |
+|GIN      |85.48±9.12 | 73.05±1.85 | 78.68±1.62 |  
+|GraphSAGE|86.06±8.26| 75.11±2.87 | 73.62±1.83 |  
 # Parameter Settings
 1、For English tasks, you need to set the parameter "cased" (in fennlp.datas.checkpoint.LoadCheckpoint) to be consistent with your preprocessed input data to ensure that the tokenizer can correctly distinguish case.
 
