@@ -19,8 +19,8 @@ Models:
 * GPT2
 * TextCNN
 * Bilstm+Attention
-* GCN, GAN, GIN 
-* ~~TucKER~~
+* GCN, GAN 
+* GIN, GraphSAGE
 
 Examples (See tests for more details):
 
@@ -32,12 +32,14 @@ Examples (See tests for more details):
 * GPT2-generation (English Version)
 * Bilstm+Attention (Chinese and English Version)
 * TextCNN(Chinese and English Version)
-* GCN, GAN, GIN  (Base on message passing)
-* ~~TuckER (English Version, WN18 data set)~~
+* GCN, GAN, GIN, GraphSAGE  (Base on message passing)
+
 
 All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
 # Status
+2020/5/5: add GIN, GraphSAGE for graph classfication.
+
 2020/4/25: add GAN, GIN model, based on message passing methods.
 
 2020/4/23: add GCN model, based on message passing methods.
