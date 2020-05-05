@@ -349,5 +349,17 @@ is important. You can set the "learning rate" to a relatively small value, and l
 
 6、Any other problem you can concat me by "zhoukaiyinhzau@gmail.com" or ask questions in issue.   
 
+# Reference
+
+[1] [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding](https://arxiv.org/abs/1810.04805)  
+[2] [ALBERT: A Lite BERT for Self-supervised Learning of Language Representations](https://arxiv.org/abs/1909.11942)  
+[3] [Language Models are Unsupervised Multitask Learners](https://openai.com/blog/better-language-models/)  
+[4] [Neural Message Passing for Quantum Chemistry](https://arxiv.org/pdf/1704.01212.pdf)  
+[5] [Semi-Supervised Classification with Graph Convolutional Networks](https://arxiv.org/abs/1609.02907)  
+[6] [Graph Attention Networks](https://arxiv.org/abs/1710.10903)  
+[7] [How Powerful are Graph Neural Networks?](https://arxiv.org/abs/1810.00826)  
+[8] [GraphSAGE: Inductive Representation Learning on Large Graphs](http://snap.stanford.edu/graphsage/)  
+[9] [Diffusion Improves Graph Learning](https://arxiv.org/abs/1911.05485)  
+[10] [Benchmarking Graph Neural Networks](https://arxiv.org/abs/2003.00982)  
 
 
