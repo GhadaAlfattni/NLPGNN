@@ -15,7 +15,7 @@ lr = 0.001
 split = 10  # 10-fold
 
 accs_all = []
-dataloader = TUDataset(name="NCI1", split=split)
+dataloader = TUDataset(name="PROTEINS", split=split)
 
 for block_index in range(split):
 

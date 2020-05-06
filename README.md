@@ -326,7 +326,7 @@ Same data split and parameters setting as proposed in the [paper](https://arxiv.
 
 |model    | MUTAG     |  PROTEINS    |NCI1  |
 | ------- | -------  |-------     |-------   |
-|GIN      |85.48±9.12 | 73.05±1.85 | 78.68±1.62 |  
+|GIN      |85.48±9.12 | 73.05±1.85 | 73.13±5.57 |  
 |GraphSAGE|86.06±8.26| 75.11±2.87 | 73.62±1.83 |  
 # Parameter Settings
 1、For English tasks, you need to set the parameter "cased" (in fennlp.datas.checkpoint.LoadCheckpoint) to be consistent with your preprocessed input data to ensure that the tokenizer can correctly distinguish case.
