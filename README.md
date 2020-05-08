@@ -311,9 +311,9 @@ useage:
 
 
 # GNN
-## 1、GCN, GAN, GIN (Based on message passing)
+## 1、GCN, GAN, GIN, GraphSAGE (Based on message passing)
 
-Same data split and parameters setting as proposed in the [paper](https://arxiv.org/abs/1609.02907) 
+Same data split and parameters setting as proposed in this [paper](https://arxiv.org/abs/1609.02907) 
 
 * Nodes Classfication
 
