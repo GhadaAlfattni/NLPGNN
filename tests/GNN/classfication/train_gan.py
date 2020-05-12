@@ -11,7 +11,7 @@ from fennlp.callbacks import EarlyStopping
 
 tf.random.set_seed(10)  # 随机选择的
 hidden_dim = 8  # 8*heads=64
-num_class = 6
+num_class = 7
 drop_rate = 0.6
 epoch = 1000
 patience = 100
@@ -19,7 +19,7 @@ penalty = 0.0005  # for cora and citeseer
 # penalty = 0.001  # for pubmed
 
 # cora, pubmed, citeseer
-loader = Planetoid(name="citeseer", loop=True, norm=True)
+loader = Planetoid(name="cora", loop=True, norm=True)
 
 features, adj, y_train, y_val, y_test, train_mask, val_mask, test_mask = loader.load()
 

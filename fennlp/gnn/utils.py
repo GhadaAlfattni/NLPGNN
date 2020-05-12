@@ -16,7 +16,6 @@ class GNNInput(NamedTuple):
     adjacency_lists: List
 
 
-
 def add_remain_self_loop(adjacency_lists, num_nodes):
     loop_index = tf.range(0, num_nodes)
     loop_index = tf.expand_dims(loop_index, 1)
@@ -115,7 +114,7 @@ def merge_graph(ds, batch=None, name=None):
         return tf.concat(window, 0)
 
 
-def merge_batch_graph(x, y, edge_index, edge_attr, batch):
+def merge_batch_graph(x, y, edge_index, edge_attr, batch, node=None):
     if x != None:
         lis_x = [np.array(item) for item in x]
         x = tf.concat(lis_x, 0)
@@ -138,6 +137,13 @@ def merge_batch_graph(x, y, edge_index, edge_attr, batch):
             edge_attr = None
         else:
             edge_attr = tf.concat(lis_edge_attr, 0)
+    if node != None:
+        lis_node = [np.array(item) for item in node]
+        if np.isnan(lis_node[0]).all():
+            node = None
+        else:
+            node = tf.concat(lis_node, 0)
+        return x, y, edge_index, edge_attr, batch, node
 
     return x, y, edge_index, edge_attr, batch
 
@@ -147,3 +153,23 @@ def batch_read_out(x, batch, size=None):
     size = tf.reduce_max(n_batch) + 1 if size is None else size
     readout = tf.math.unsorted_segment_sum(x, n_batch, size)
     return readout
+
+
+from multiprocessing.dummy import Pool as ThreadPool
+
+pool = ThreadPool(10)
+
+
+def features2embedding(feature, word2embedding):
+    def func_wrap(word2emb):
+        def func(item):
+            emb = word2emb.get(item.numpy())
+            # return tf.cast(emb, dtype=tf.float32)
+            return emb
+
+        return func
+
+    # nfeatures = tf.map_fn(func_wrap(word2embedding), tf.cast(feature, tf.float32),parallel_iterations=8)
+    nfeatures = list(pool.map(func_wrap(word2embedding), tf.cast(feature, tf.float32)))
+
+    return tf.constant(nfeatures, dtype=tf.float32)

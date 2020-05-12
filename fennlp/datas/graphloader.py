@@ -11,6 +11,7 @@ import scipy.sparse as sp
 import tensorflow as tf
 from scipy import sparse
 import zipfile
+import codecs
 from fennlp.gnn.utils import *
 
 from sklearn.model_selection import StratifiedKFold
@@ -602,3 +603,240 @@ class TuData:
                     yield x[i], y[i], edge_index[i], edge_attr[i], batch[i]
 
         return gen
+
+
+class Sminarog():
+    def __init__(self, data="R8", data_dir="data", embedding="glove50"):
+        self.data_dir = data_dir
+        self.data = data
+        self.embedding = embedding
+        self.url = "https://www.cs.umb.edu/~smimarog/textmining/datasets/"
+        self.download()
+        if not os.path.exists("glove"):
+            self.download_glove()
+        else:
+            print("Warning: Embedding dictionary has exists, the code will skip download {}. "
+                  "if you want to use word2vec embedding, you could put them in the "
+                  "embedding dictionary.".format(embedding))
+
+        self.word2embedding, self.words2index = self.map_word_to_embedding()
+
+    @property
+    def vocab_size(self):
+        return len(self.words2index)
+
+    def raw_file(self, data):
+        file_name = ["{}-train-all-terms.txt".format(data.lower()), "{}-test-all-terms.txt".format(data.lower())]
+        return file_name
+
+    def download(self):
+        data_dir = os.path.join(self.data_dir, self.data)
+        if not os.path.exists(data_dir):
+            os.mkdir(data_dir)
+        for name in self.raw_file(self.data.lower()):
+            url = "{}/{}".format(self.url, name)
+            outpath = "{}/{}".format(data_dir, name)
+            if not os.path.exists(outpath):
+                print('Downloading', url)
+                data = urllib.request.urlopen(url)
+                with open(outpath, 'wb') as wf:
+                    wf.write(data.read())
+
+    def unzip(self, filename, folder):
+        with zipfile.ZipFile(filename, 'r') as f:
+            f.extractall(folder)
+
+    def download_glove(self):
+        # if not os.path.exists("embedding"):
+        #     os.mkdir("embedding")
+        url = "http://downloads.cs.stanford.edu/nlp/data/{}"
+        if self.embedding[:5] == "glove":
+            url = url.format("glove.6B.zip")
+            outpath = "{}.zip".format("glove.6B.zip")
+            print('Downloading Glove...', url)
+            data = urllib.request.urlopen(url)
+            with open(outpath, 'wb') as wf:
+                wf.write(data.read())
+            self.unzip(outpath, "glove")
+            os.unlink(outpath)
+        else:
+            raise ValueError("Currently only support glove embedding!")
+
+    # @property
+    # def edge_size(self):
+    #     return self.edge_size
+    def map_edge2index(self, edge_type_num, k=5):
+        new_edge_type_index = {}
+        index_set = {0}
+        for key, value in edge_type_num.items():
+            if value > k:
+                new_edge_type_index[key] = len(index_set)
+                index_set.add(len(index_set))
+            else:
+                new_edge_type_index[key] = 0
+        return new_edge_type_index
+
+    def map_node2index(self, nodes):
+        node2index = {}
+        for i, item in enumerate(nodes):
+            node2index[item] = i
+        return node2index
+
+    def build_graph(self, edge2index=None, node2index=None, mode="train", p=2, k=5, return_node2index=False):
+        names = self.raw_file(self.data)
+        if mode == "train":
+            name = names[0]
+        elif mode == "test":
+            name = names[1]
+        else:
+            raise ValueError("mode can only equal train or test")
+        filename = os.path.join(os.path.join(self.data_dir, self.data), name)
+
+        labels = []
+        features = []
+        adjs = []
+        batchs = []
+        edge_attrs = []
+        rf = open(filename)
+        edge_type_num = defaultdict(int)
+        # edge_type_index = {}
+        if node2index == None:
+            node2index = {'<UNK>': 0}
+        else:
+            node2index = node2index
+
+        graph_edge_map = []
+        nodes_list = []
+        for line in rf:
+            word2index = {}
+            adj = []
+            line = line.strip().split('\t')
+            label, text = line[0], line[1]
+            text_list = text.split(' ')
+            for w in set(text_list):
+                word2index[w] = len(word2index)
+            index2word = {v: k for k, v in word2index.items()}
+            graph_edge_map.append(index2word)
+            for i, source in enumerate(text_list):
+                if source not in node2index and mode == "train":
+                    node2index[source] = len(node2index)
+                if i >= p:
+                    targets = text_list[-p + i:p + i + 1]
+                elif i < p:
+                    targets = text_list[:p + i + 1]
+                for target in targets:
+                    adj.append([word2index[source], word2index[target]])
+                    edge_type_num[(source, target)] += 1
+                    # edge_type_index[(source, target)] = len(edge_type_index) + 1
+                    # edge_attr.append([self.words2index.get(source, 0), self.words2index.get(target, 0)])
+            feature = [self.word2embedding.get(self.words2index.get(index2word[i], 0)) for i in range(len(word2index))]
+            if return_node2index:
+                node_per_text = [index2word[i] for i in range(len(word2index))]
+                nodes_list.append(node_per_text)
+
+            features.append(feature)
+            adjs.append(adj)
+            labels.append(label)
+            batchs.append([len(batchs)] * len(feature))
+
+            # edge_attrs.append(edge_attr)
+        if edge2index == None:
+            edge2index = self.map_edge2index(edge_type_num, k)
+        else:
+            edge2index = edge2index
+        for i, adj in enumerate(adjs):
+            edge_map = graph_edge_map[i]
+            edge_attr = []
+            for edge_pair in adj:
+                source_w = edge_map[edge_pair[0]]
+                target_w = edge_map[edge_pair[1]]
+
+                edge_attr.append(edge2index.get((source_w, target_w), 0))
+            edge_attrs.append(edge_attr)
+        nodes = []
+        if return_node2index:
+            for node_list in nodes_list:
+                node_index = [node2index.get(w, 0) for w in node_list]
+                nodes.append(node_index)
+
+        # edge_size = len([key for key, value in edge_type_num.items() if value > k]) + 1
+        print("Num of the class in {} is {}.".format(mode, len(set(labels))))
+        label2index = {label: index for index, label in enumerate(list(set(labels)))}
+        labels = [label2index[label] for label in labels]
+        if return_node2index:
+            return features, nodes, adjs, edge_attrs, labels, batchs, edge2index, node2index
+        else:
+            return features, adjs, edge_attrs, labels, batchs, edge2index
+
+    @property
+    def vocabs(self):
+        names = self.raw_file(self.data)
+        vocabs = defaultdict(int)
+        filename = os.path.join(os.path.join(self.data_dir, self.data), names[0])
+        rf = open(filename)
+        for line in rf:
+            line = line.strip().split('\t')
+            vocab_set = [i for i in line[1].split(' ')]
+            vocab_num = Counter(vocab_set)
+            for vocab, num in vocab_num.items():
+                vocabs[vocab] += num
+        return vocabs
+
+    def map_word_to_embedding(self):
+        unknown = np.random.uniform(-1, 1, size=(int(self.embedding[5:]),)).astype(np.float32).tolist()
+        word2embedding = {0.0: unknown}
+        words2index = {"<UNK>": 0}
+        if self.embedding == "glove50":
+            glove_path = "{}/glove.6B.50d.txt".format(self.embedding[:5])
+        elif self.embedding == "glove100":
+            glove_path = "{}/glove.6B.100d.txt".format(self.embedding[:5])
+        elif self.embedding == "glove200":
+            glove_path = "{}/glove.6B.200d.txt".format(self.embedding[:5])
+        elif self.embedding == "glove300":
+            glove_path = "{}/glove.6B.300d.txt".format(self.embedding[:5])
+        else:
+            raise ValueError("glove_path can only in glove50, glove100, glove200, glove300 !")
+
+        with codecs.open(glove_path, encoding='utf-8') as rf:
+            # vocabs = self.vocabs
+            for line in rf:
+                line = line.strip().split(' ')
+                word = line[0]
+                # if word in vocabs and vocabs[word]>=5:
+                embedding = [float(i) for i in line[1:]]
+                word2embedding[float(len(words2index))] = embedding  # 这里是为了后面能够使用
+                words2index[word] = len(words2index)
+
+        return word2embedding, words2index
+
+    def generator(self, features, adjs, edge_attrs, labels, batchs):
+        def gen():
+            if edge_attrs == None:
+                for i, feature_i in enumerate(features):
+                    yield features[i], labels[i], adjs[i], edge_attrs, batchs[i]
+            else:
+                for i, feature_i in enumerate(features):
+                    yield features[i], labels[i], adjs[i], edge_attrs[i], batchs[i]
+
+        return gen
+
+    def load(self, features, adjs, labels, edge_attrs=None, batchs=None, batch_size=32):
+        data = tf.data.Dataset.from_generator(self.generator(features, adjs, edge_attrs, labels, batchs),
+                                              (tf.float32, tf.int32, tf.int32, tf.float32, tf.int32))
+        return data.shuffle(1000).window(batch_size)
+
+    def generator_textgcn(self, features, nodes, adjs, edge_attrs, labels, batchs):
+        def gen():
+            if edge_attrs == None:
+                for i, feature_i in enumerate(features):
+                    yield features[i], nodes[i], labels[i], adjs[i], edge_attrs, batchs[i]
+            else:
+                for i, feature_i in enumerate(features):
+                    yield features[i], nodes[i], labels[i], adjs[i], edge_attrs[i], batchs[i]
+
+        return gen
+
+    def load_textgcn(self, features, nodes, adjs, labels, edge_attrs=None, batchs=None, batch_size=32):
+        data = tf.data.Dataset.from_generator(self.generator_textgcn(features, nodes, adjs, edge_attrs, labels, batchs),
+                                              (tf.float32, tf.int32, tf.int32, tf.int32, tf.float32, tf.int32))
+        return data.shuffle(1000).window(batch_size)

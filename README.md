@@ -21,6 +21,7 @@ Models:
 * Bilstm+Attention
 * GCN, GAN 
 * GIN, GraphSAGE
+* TextGCN, TextSGAE
 
 Examples (See tests for more details):
 
@@ -33,11 +34,14 @@ Examples (See tests for more details):
 * Bilstm+Attention (Chinese and English Version)
 * TextCNN(Chinese and English Version)
 * GCN, GAN, GIN, GraphSAGE  (Base on message passing)
+* TextGCN and TextSAGE for text classification
 
 
 All the above experiments were tested on GTX 1080 GPU with memory 8000MiB.
 
 # Status
+2020/5/11: add TextGCN and TextSAGE for text classification.
+
 2020/5/5: add GIN, GraphSAGE for graph classfication.
 
 2020/4/25: add GAN, GIN model, based on message passing methods.
@@ -311,9 +315,9 @@ useage:
 
 
 # GNN
-## 1、GCN, GAN, GIN (Based on message passing)
+## 1、GCN, GAN, GIN, GraphSAGE (Based on message passing)
 
-Same data split and parameters setting as proposed in the [paper](https://arxiv.org/abs/1609.02907) 
+Same data split and parameters setting as proposed in this [paper](https://arxiv.org/abs/1609.02907) 
 
 * Nodes Classfication
 
@@ -326,8 +330,20 @@ Same data split and parameters setting as proposed in the [paper](https://arxiv.
 
 |model    | MUTAG     |  PROTEINS    |NCI1  |
 | ------- | -------  |-------     |-------   |
-|GIN      |85.48±9.12 | 73.05±1.85 | 73.13±5.57 |  
-|GraphSAGE|86.06±8.26| 75.11±2.87 | 73.62±1.83 |  
+|GIN     |85.48±9.12<sup>#</sup>  | 73.05±1.85<sup>#</sup>  | 73.13±5.57<sup>#</sup>  |  
+|GraphSAGE|86.06±8.26| 75.11±2.87 | 73.62±1.83 | 
+
+Note: The # sign indicates that the current result is less than the paper result. 
+The possible reason is that the paper does not describe the implementation details in detail. 
+Or the current implementation has some errors or insufficient training.
+
+* Text Classfication
+
+|model    | R8     |  R52    |
+| ------- | -------  |------- |
+|TextSAGE|  0.9649±0.0051 |0.9280±0.0032|
+|TextGCN2019|  --  |  --  |
+
 # Parameter Settings
 1、For English tasks, you need to set the parameter "cased" (in fennlp.datas.checkpoint.LoadCheckpoint) to be consistent with your preprocessed input data to ensure that the tokenizer can correctly distinguish case.
 
@@ -361,5 +377,7 @@ is important. You can set the "learning rate" to a relatively small value, and l
 [8] [GraphSAGE: Inductive Representation Learning on Large Graphs](http://snap.stanford.edu/graphsage/)  
 [9] [Diffusion Improves Graph Learning](https://arxiv.org/abs/1911.05485)  
 [10] [Benchmarking Graph Neural Networks](https://arxiv.org/abs/2003.00982)  
-
-
+[11] [Text Level Graph Neural Network for Text Classification](https://www.aclweb.org/anthology/D19-1345/)  
+[12] [Graph Convolutional Networks for Text Classification](https://arxiv.org/abs/1809.05679)  
+[13] [Tensor Graph Convolutional Networks for Text Classification](https://arxiv.org/abs/2001.05313)  
+[14] [Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning](https://arxiv.org/pdf/1801.07606.pdf)

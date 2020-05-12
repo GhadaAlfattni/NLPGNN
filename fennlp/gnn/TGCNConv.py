@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 """
 @Author:Kaiyin Zhou
+# Text Level Graph Neural Network for Text Classfication
 """
 
 import tensorflow as tf
@@ -14,45 +15,28 @@ class GNNInput(NamedTuple):
     node_embeddings: tf.Tensor
     adjacency_lists: List
     edge_weights: List
+    # etan: tf.Tensor
 
 
-class GraphSAGEConvolution(MessagePassing):
+class TextGCNConvolution(MessagePassing):
     def __init__(self,
-                 out_features,
-                 aggr='sum',
-                 use_bias=True,
-                 concat=True,
-                 normalize=True,
+                 aggr='max',
                  kernel_initializer='glorot_uniform',
-                 bias_initializer='zeros',
                  **kwargs):
-        super(GraphSAGEConvolution, self).__init__(aggr=aggr, **kwargs)
-        self.out_features = out_features
-        self.use_bias = use_bias
+        super(TextGCNConvolution, self).__init__(aggr=aggr, **kwargs)
         self.kernel_initializer = kernel_initializer
-        self.bias_initializer = bias_initializer
-        self.concat = concat
-        self.normalize = normalize
 
-    def build(self, input_shapes):
-        node_embedding_shapes = input_shapes.node_embeddings
-        # adjacency_list_shapes = input_shapes.adjacency_lists
-        in_features = node_embedding_shapes[-1]
-        if self.concat:
-            in_features = 2 * in_features
-        self.weight = self.add_weight(
-            shape=(in_features, self.out_features),
-            initializer=self.kernel_initializer,
-            name='w',
-        )
-
-        if self.use_bias:
-            self.bias = self.add_weight(
-                shape=(self.out_features,),
-                initializer=self.bias_initializer,
-                name='b',
-            )
-        self.built = True
+    # def build(self, input_shapes):
+    #     node_embedding_shapes = input_shapes.node_embeddings
+    #     adjacency_list_shapes = input_shapes.adjacency_lists
+    #     in_features = node_embedding_shapes[0]
+    #     self.eta = self.add_weight(
+    #         shape=(1,),
+    #         initializer=tf.constant_initializer(0.5),
+    #         name='eta'
+    #     )
+    #
+    #     self.built = True
 
     def message_function(self, edge_source_states, edge_source,  # x_j source
                          edge_target_states, edge_target,  # x_i target
@@ -68,12 +52,9 @@ class GraphSAGEConvolution(MessagePassing):
         :param training:
         :return:
         """
-        if edge_weights == 0:
-            edge_weight = edge_weights[edge_type_idx]
-            messages = edge_source_states * tf.reshape(edge_weight, [-1, 1])
-        else:
-            messages = edge_source_states
-        return messages
+        edge_weight = edge_weights[edge_type_idx]
+
+        return edge_source_states * tf.reshape(edge_weight, [-1, 1])
 
     def propagate(self, inputs, training=None):
         """
@@ -104,8 +85,7 @@ class GraphSAGEConvolution(MessagePassing):
 
         return new_nodes_states
 
-    def _calculate_messages_all_type(self, node_embeddings, adjacency_lists,
-                                     edge_weights, training):
+    def _calculate_messages_all_type(self, node_embeddings, adjacency_lists, edge_weights, training):
         messages_all_type = []
         type_incoming_edges_num, type_outing_edges_num = self._calculate_type_to_incoming_edges_num(node_embeddings,
                                                                                                     adjacency_lists)
@@ -135,18 +115,10 @@ class GraphSAGEConvolution(MessagePassing):
         adjacency_lists = inputs.adjacency_lists
         node_embeddings = inputs.node_embeddings
         edge_weights_lists = inputs.edge_weights
-
-        if not self.concat:
-            adjacency_lists = add_remain_self_loop(adjacency_lists, len(node_embeddings))
+        etan = inputs.etan
+        # adjacency_lists = add_remain_self_loop(adjacency_lists, len(node_embeddings))
         aggr_out = self.propagate(GNNInput(node_embeddings, adjacency_lists, edge_weights_lists), training)
-        if self.concat:
-            aggr_out = tf.concat([node_embeddings, aggr_out], -1)
 
-        aggr_out = tf.linalg.matmul(aggr_out, self.weight)
+        aggr_out = (1 - etan) * aggr_out + etan * node_embeddings
 
-        if self.use_bias:
-            aggr_out = aggr_out + self.bias
-
-        if self.normalize:
-            aggr_out = tf.math.l2_normalize(aggr_out, -1)
         return aggr_out

@@ -21,3 +21,4 @@ from .RGCN import *
 from .TextCNN import *
 from .tucker import *
 from .GraphSage import *
+from .TextGCN2019 import *
